@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-gray-950 text-gray-100;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-gray-900;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-700 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-600;
+}
+
+/* Markdown prose in chat */
+.prose-dark {
+  @apply text-gray-200;
+}
+.prose-dark h1, .prose-dark h2, .prose-dark h3 {
+  @apply text-white font-semibold mt-4 mb-2;
+}
+.prose-dark p {
+  @apply mb-2;
+}
+.prose-dark code {
+  @apply bg-gray-800 text-indigo-300 px-1 py-0.5 rounded text-sm;
+}
+.prose-dark pre {
+  @apply bg-gray-800 rounded-lg p-4 overflow-x-auto my-3;
+}
+.prose-dark pre code {
+  @apply bg-transparent p-0;
+}
+.prose-dark ul, .prose-dark ol {
+  @apply pl-5 mb-2;
+}
+.prose-dark ul {
+  @apply list-disc;
+}
+.prose-dark ol {
+  @apply list-decimal;
+}
+.prose-dark li {
+  @apply mb-1;
+}
+.prose-dark a {
+  @apply text-indigo-400 underline;
+}
+.prose-dark blockquote {
+  @apply border-l-4 border-indigo-500 pl-4 italic text-gray-400;
+}
+.prose-dark strong {
+  @apply text-white font-semibold;
+}
