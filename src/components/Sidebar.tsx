@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import {
   MessageSquare, FileText, BookOpen, Kanban, Bot,
@@ -27,6 +27,8 @@ const COLOR_CLASSES: Record<string, string> = {
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentProjectId = searchParams.get('project');
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasksOpen, setTasksOpen] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -123,7 +125,7 @@ export default function Sidebar() {
               <Link
                 href="/tasks"
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  pathname === '/tasks' && !window?.location?.search
+                  pathname === '/tasks' && !currentProjectId
                     ? 'bg-gray-700 text-white'
                     : 'text-gray-500 hover:text-white hover:bg-gray-800'
                 }`}
@@ -138,7 +140,7 @@ export default function Sidebar() {
                   <Link
                     href={`/tasks?project=${p.id}`}
                     className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      pathname.startsWith('/tasks') && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('project') === p.id
+                      pathname.startsWith('/tasks') && currentProjectId === p.id
                         ? 'bg-gray-700 text-white'
                         : 'text-gray-500 hover:text-white hover:bg-gray-800'
                     }`}
