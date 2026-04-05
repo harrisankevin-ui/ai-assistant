@@ -28,7 +28,7 @@ interface Props {
 
 export default function TaskColumn({ status, tasks, projectName, onMove, onEdit, onDelete, onAdd }: Props) {
   return (
-    <div className="flex flex-col bg-gray-900 rounded-xl p-3 min-w-0 flex-1">
+    <div className="flex flex-col bg-gray-900 rounded-xl p-3 min-w-[78vw] md:min-w-0 flex-shrink-0 md:flex-1 snap-center">
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
           <h3 className={`text-sm font-semibold ${COLUMN_COLORS[status]}`}>

@@ -90,7 +90,7 @@ export default function KanbanBoard({ projectId }: Props) {
   };
 
   return (
-    <div className="flex gap-4 h-full p-6 overflow-x-auto">
+    <div className="flex gap-4 h-full p-4 md:p-6 overflow-x-auto snap-x snap-mandatory scroll-smooth">
       {STATUSES.map(status => (
         <TaskColumn
           key={status}

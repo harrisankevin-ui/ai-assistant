@@ -18,3 +18,8 @@ yarn-error.log*
 
 # Vercel
 .vercel
+
+# PWA generated files (regenerated on each build)
+/public/sw.js
+/public/sw.js.map
+/public/workbox-*.js

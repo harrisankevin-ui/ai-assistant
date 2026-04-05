@@ -65,3 +65,10 @@ body {
 .prose-dark strong {
   @apply text-white font-semibold;
 }
+
+/* Safe area insets for PWA on iPhone */
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

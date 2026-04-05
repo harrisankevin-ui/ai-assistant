@@ -63,6 +63,9 @@ export default function WeeklyBrief() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLDivElement>(null);
+
   // Quick-add state
   const [addingDay, setAddingDay] = useState<string | null>(null); // day.toDateString() key
   const [quickTitle, setQuickTitle] = useState('');
@@ -87,6 +90,16 @@ export default function WeeklyBrief() {
   }, []);
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
+
+  // Auto-scroll to today's column on mount (mobile)
+  useEffect(() => {
+    if (todayRef.current && calendarRef.current) {
+      const container = calendarRef.current;
+      const todayEl = todayRef.current;
+      const scrollLeft = todayEl.offsetLeft - (container.clientWidth / 2) + (todayEl.clientWidth / 2);
+      container.scrollTo({ left: scrollLeft, behavior: 'instant' });
+    }
+  }, []);
 
   // Focus the quick-add input when it opens
   useEffect(() => {
@@ -173,7 +186,10 @@ export default function WeeklyBrief() {
       </div>
 
       {/* Calendar grid */}
-      <div className="flex-1 grid grid-cols-7 gap-2 overflow-hidden min-h-0">
+      <div
+        ref={calendarRef}
+        className="flex-1 min-h-0 flex md:grid md:grid-cols-7 gap-2 overflow-x-auto md:overflow-hidden snap-x snap-mandatory scroll-smooth"
+      >
         {dayDates.map((day, i) => {
           const isToday = isSameDay(day, today);
           const dayTasks = tasksForDay(day);
@@ -182,7 +198,8 @@ export default function WeeklyBrief() {
           return (
             <div
               key={i}
-              className={`flex flex-col rounded-xl overflow-hidden ${isToday ? 'ring-1 ring-indigo-500' : ''}`}
+              ref={isToday ? todayRef : undefined}
+              className={`flex flex-col rounded-xl overflow-hidden shrink-0 min-w-[72vw] md:min-w-0 snap-center ${isToday ? 'ring-1 ring-indigo-500' : ''}`}
             >
               {/* Day header */}
               <div className={`px-2 py-2 shrink-0 ${isToday ? 'bg-indigo-600' : 'bg-gray-800'}`}>

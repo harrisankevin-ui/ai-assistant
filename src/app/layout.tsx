@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
+import BottomNav from '@/components/BottomNav';
 
 export const metadata: Metadata = {
   title: 'AI Assistant',
@@ -16,6 +17,9 @@ export const metadata: Metadata = {
 
 export const viewport = {
   themeColor: '#0a0a0f',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -26,11 +30,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className="bg-gray-950 text-gray-100 h-screen flex overflow-hidden">
-        <Suspense fallback={<div className="w-56 bg-gray-900 border-r border-gray-800 shrink-0" />}>
+      <body className="bg-gray-950 text-gray-100 h-[100dvh] flex overflow-hidden">
+        <Suspense fallback={<div className="hidden md:flex w-56 bg-gray-900 border-r border-gray-800 shrink-0" />}>
           <Sidebar />
         </Suspense>
-        <main className="flex-1 overflow-hidden">{children}</main>
+        <main className="flex-1 overflow-hidden pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
+          {children}
+        </main>
+        <BottomNav />
       </body>
     </html>
   );
