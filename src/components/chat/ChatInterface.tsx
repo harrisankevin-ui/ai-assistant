@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Loader2, Wrench } from 'lucide-react';
+import { Loader2, Wrench, Send } from 'lucide-react';
 import type { Conversation, Message } from '@/types';
 import ConversationList from './ConversationList';
 import MessageBubble from './MessageBubble';
