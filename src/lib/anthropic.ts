@@ -42,12 +42,6 @@ When listing tasks, group by priority (high first) unless asked otherwise.
 - On dashboard: can be more detailed when helpful`;
 
 export async function buildSystemPrompt(): Promise<string> {
-  const { data: memories } = await supabase
-    .from('memories')
-    .select('category, key, value')
-    .order('category')
-    .order('key');
-
   const date = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -58,9 +52,19 @@ export async function buildSystemPrompt(): Promise<string> {
 
   let prompt = BASE_SYSTEM_PROMPT.replace('{DATE}', date);
 
-  if (memories && memories.length > 0) {
-    const lines = memories.map((m) => `- ${m.key}: ${m.value}`).join('\n');
-    prompt += `\n\n## What you know about Harrisan\n${lines}`;
+  try {
+    const { data: memories } = await supabase
+      .from('memories')
+      .select('category, key, value')
+      .order('category')
+      .order('key');
+
+    if (memories && memories.length > 0) {
+      const lines = memories.map((m) => `- ${m.key}: ${m.value}`).join('\n');
+      prompt += `\n\n## What you know about Harrisan\n${lines}`;
+    }
+  } catch {
+    // If memories fail to load, fall back to base prompt gracefully
   }
 
   return prompt;

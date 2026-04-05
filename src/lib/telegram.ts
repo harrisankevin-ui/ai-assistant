@@ -123,7 +123,7 @@ export async function handleTelegramUpdate(update: TelegramBot.Update): Promise<
     if (reply.length <= 4096) {
       await b.sendMessage(chatId, reply);
     } else {
-      const chunks = reply.match(/.{1,4000}(\n|$)/gs) ?? [reply.slice(0, 4000)];
+      const chunks = reply.match(/[\s\S]{1,4000}/g) ?? [reply.slice(0, 4000)];
       for (const chunk of chunks) {
         await b.sendMessage(chatId, chunk);
       }
