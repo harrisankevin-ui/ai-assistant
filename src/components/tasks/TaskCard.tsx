@@ -1,9 +1,26 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Trash2, Calendar } from 'lucide-react';
 import type { Task, TaskStatus } from '@/types';
 
 const STATUS_ORDER: TaskStatus[] = ['todo', 'in_progress', 'done'];
+
+const PRIORITY_BORDER: Record<string, string> = {
+  high: 'border-l-red-500',
+  moderate: 'border-l-yellow-500',
+  low: 'border-l-green-500',
+};
+
+function formatDueDate(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const isThisYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    ...(isThisYear ? {} : { year: 'numeric' }),
+  });
+}
 
 interface Props {
   task: Task;
@@ -17,9 +34,10 @@ export default function TaskCard({ task, projectLabel, onMove, onEdit, onDelete 
   const idx = STATUS_ORDER.indexOf(task.status);
   const canMoveLeft = idx > 0;
   const canMoveRight = idx < STATUS_ORDER.length - 1;
+  const borderClass = PRIORITY_BORDER[task.priority] ?? PRIORITY_BORDER.moderate;
 
   return (
-    <div className="bg-gray-800 rounded-lg p-3 group">
+    <div className={`bg-gray-800 rounded-lg p-3 group border-l-2 ${borderClass}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           {projectLabel && (
@@ -49,24 +67,32 @@ export default function TaskCard({ task, projectLabel, onMove, onEdit, onDelete 
         <p className="text-xs text-gray-400 mt-1.5 line-clamp-2">{task.description}</p>
       )}
 
-      <div className="flex gap-1 mt-2.5">
-        {canMoveLeft && (
-          <button
-            onClick={() => onMove(task.id, STATUS_ORDER[idx - 1])}
-            className="flex items-center gap-0.5 px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white rounded text-xs transition-colors"
-          >
-            <ChevronLeft size={11} />
-            {STATUS_ORDER[idx - 1].replace('_', ' ')}
-          </button>
-        )}
-        {canMoveRight && (
-          <button
-            onClick={() => onMove(task.id, STATUS_ORDER[idx + 1])}
-            className="flex items-center gap-0.5 px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white rounded text-xs transition-colors ml-auto"
-          >
-            {STATUS_ORDER[idx + 1].replace('_', ' ')}
-            <ChevronRight size={11} />
-          </button>
+      <div className="flex items-center justify-between mt-2.5">
+        <div className="flex gap-1">
+          {canMoveLeft && (
+            <button
+              onClick={() => onMove(task.id, STATUS_ORDER[idx - 1])}
+              className="flex items-center gap-0.5 px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white rounded text-xs transition-colors"
+            >
+              <ChevronLeft size={11} />
+              {STATUS_ORDER[idx - 1].replace('_', ' ')}
+            </button>
+          )}
+          {canMoveRight && (
+            <button
+              onClick={() => onMove(task.id, STATUS_ORDER[idx + 1])}
+              className="flex items-center gap-0.5 px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white rounded text-xs transition-colors"
+            >
+              {STATUS_ORDER[idx + 1].replace('_', ' ')}
+              <ChevronRight size={11} />
+            </button>
+          )}
+        </div>
+        {task.due_at && (
+          <span className="flex items-center gap-1 text-xs text-gray-500 ml-auto">
+            <Calendar size={10} />
+            {formatDueDate(task.due_at)}
+          </span>
         )}
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import ReactMarkdown from 'react-markdown';
 import type { Message } from '@/types';
-import { Bot, User } from 'lucide-react';
+import { User } from 'lucide-react';
 
 interface Props {
   message: Message | { role: 'user' | 'assistant'; content: string; id?: string };
@@ -19,7 +19,10 @@ export default function MessageBubble({ message }: Props) {
           isUser ? 'bg-indigo-600' : 'bg-gray-700'
         }`}
       >
-        {isUser ? <User size={16} className="text-white" /> : <Bot size={16} className="text-gray-200" />}
+        {isUser
+          ? <User size={16} className="text-white" />
+          : <span className="text-sm font-semibold text-white">M</span>
+        }
       </div>
 
       {/* Bubble */}

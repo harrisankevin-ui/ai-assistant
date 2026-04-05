@@ -191,9 +191,14 @@ export default function ChatInterface() {
                 <MessageBubble key={('id' in msg && msg.id) ? msg.id : i} message={msg as Message} />
               ))}
               {toolCalling && (
-                <div className="flex items-center gap-2 text-xs text-indigo-400 animate-pulse">
-                  <Wrench size={14} />
-                  <span>Using tool: {toolCalling}…</span>
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-semibold text-white">M</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 rounded-2xl rounded-tl-sm">
+                    <Wrench size={11} className="text-indigo-400 animate-pulse" />
+                    <span className="text-xs text-gray-400">{toolCalling.replace(/_/g, ' ')}</span>
+                  </div>
                 </div>
               )}
               {streamingText && (
@@ -219,7 +224,7 @@ export default function ChatInterface() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Message Claude… (Enter to send, Shift+Enter for newline)"
+                  placeholder="Message Max… (Enter to send, Shift+Enter for newline)"
                   rows={1}
                   className="flex-1 bg-transparent text-sm text-gray-100 placeholder-gray-500 resize-none outline-none max-h-40"
                   style={{ minHeight: '1.5rem' }}
