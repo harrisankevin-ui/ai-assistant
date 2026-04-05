@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from('tasks')
-    .select('id, title, description, status, position, project_id, created_at, updated_at')
+    .select('id, title, description, status, priority, position, project_id, created_at, updated_at')
     .order('position', { ascending: true });
 
   if (status) query = query.eq('status', status);
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       title: body.title,
       description: body.description || '',
       status: taskStatus,
+      priority: (body as { priority?: string }).priority ?? 'moderate',
       position,
       project_id: body.project_id ?? null,
     })
