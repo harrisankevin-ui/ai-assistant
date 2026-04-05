@@ -47,8 +47,10 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
+  priority: 'low' | 'moderate' | 'high';
   position: number;
   project_id: string | null;
+  due_at: string | null;
   created_at: string;
   updated_at: string;
 }

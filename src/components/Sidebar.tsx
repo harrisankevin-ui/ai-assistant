@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import {
   MessageSquare, FileText, BookOpen, Kanban, Bot,
-  ChevronDown, ChevronRight, Plus, Trash2, Circle,
+  ChevronDown, ChevronRight, Plus, Trash2, Circle, CalendarDays,
 } from 'lucide-react';
 import type { Project } from '@/types';
 
@@ -207,6 +207,12 @@ export default function Sidebar() {
             </div>
           )}
         </div>
+
+        {/* Weekly Brief */}
+        <Link href="/weekly" className={navItemClass(pathname.startsWith('/weekly'))}>
+          <CalendarDays size={18} />
+          <span>Weekly Brief</span>
+        </Link>
       </nav>
 
       {/* Footer */}

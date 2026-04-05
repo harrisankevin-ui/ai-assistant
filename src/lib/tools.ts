@@ -90,6 +90,10 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
           enum: ['low', 'moderate', 'high'],
           description: 'Task priority — infer from urgency/deadlines. Defaults to moderate.',
         },
+        due_at: {
+          type: 'string',
+          description: 'ISO 8601 datetime when task is scheduled, with Toronto timezone offset. E.g. "2026-04-11T15:00:00-04:00" for 3pm EDT. Use noon (T12:00:00) if no specific time given. Leave unset if no date mentioned.',
+        },
         project_id: { type: 'string', description: 'Optional project ID to associate this task with' },
       },
       required: ['title'],
@@ -113,6 +117,10 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
           type: 'string',
           enum: ['low', 'moderate', 'high'],
           description: 'New priority',
+        },
+        due_at: {
+          type: 'string',
+          description: 'New scheduled datetime in ISO 8601 with Toronto timezone offset.',
         },
       },
       required: ['id'],
@@ -242,11 +250,12 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
       }
 
       case 'create_task': {
-        const { title, description = '', status = 'todo', priority = 'moderate', project_id } = input as {
+        const { title, description = '', status = 'todo', priority = 'moderate', due_at, project_id } = input as {
           title: string;
           description?: string;
           status?: string;
           priority?: string;
+          due_at?: string;
           project_id?: string;
         };
         const { data: existing } = await supabase
@@ -258,7 +267,7 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
         const position = existing && existing.length > 0 ? existing[0].position + 1 : 0;
         const { data, error } = await supabase
           .from('tasks')
-          .insert({ title, description, status, priority, position, project_id: project_id ?? null })
+          .insert({ title, description, status, priority, due_at: due_at ?? null, position, project_id: project_id ?? null })
           .select()
           .single();
         if (error) throw error;

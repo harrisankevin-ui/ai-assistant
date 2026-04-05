@@ -8,11 +8,18 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from('tasks')
-    .select('id, title, description, status, priority, position, project_id, created_at, updated_at')
-    .order('position', { ascending: true });
+    .select('id, title, description, status, priority, position, project_id, due_at, created_at, updated_at')
+    .order('due_at', { ascending: true, nullsFirst: false });
 
-  if (status) query = query.eq('status', status);
-  if (projectId) query = query.eq('project_id', projectId);
+  const weekStart = searchParams.get('week_start');
+  const weekEnd = searchParams.get('week_end');
+
+  if (weekStart && weekEnd) {
+    query = query.gte('due_at', weekStart).lte('due_at', weekEnd).not('due_at', 'is', null);
+  } else {
+    if (status) query = query.eq('status', status);
+    if (projectId) query = query.eq('project_id', projectId);
+  }
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -24,6 +31,8 @@ export async function POST(req: NextRequest) {
     title: string;
     description?: string;
     status?: string;
+    priority?: string;
+    due_at?: string | null;
     project_id?: string | null;
   };
 
@@ -45,7 +54,8 @@ export async function POST(req: NextRequest) {
       title: body.title,
       description: body.description || '',
       status: taskStatus,
-      priority: (body as { priority?: string }).priority ?? 'moderate',
+      priority: body.priority ?? 'moderate',
+      due_at: body.due_at ?? null,
       position,
       project_id: body.project_id ?? null,
     })
