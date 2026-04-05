@@ -6,19 +6,23 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get('status');
   const projectId = searchParams.get('project');
 
-  let query = supabase
-    .from('tasks')
-    .select('id, title, description, status, priority, position, project_id, due_at, created_at, updated_at')
-    .order('due_at', { ascending: true, nullsFirst: false });
-
   const weekStart = searchParams.get('week_start');
   const weekEnd = searchParams.get('week_end');
 
+  let query = supabase
+    .from('tasks')
+    .select('id, title, description, status, priority, position, project_id, due_at, created_at, updated_at');
+
   if (weekStart && weekEnd) {
-    query = query.gte('due_at', weekStart).lte('due_at', weekEnd).not('due_at', 'is', null);
+    query = query
+      .gte('due_at', weekStart)
+      .lte('due_at', weekEnd)
+      .not('due_at', 'is', null)
+      .order('due_at', { ascending: true });
   } else {
     if (status) query = query.eq('status', status);
     if (projectId) query = query.eq('project_id', projectId);
+    query = query.order('status').order('position');
   }
 
   const { data, error } = await query;
