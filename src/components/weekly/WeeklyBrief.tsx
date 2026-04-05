@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Task, Project } from '@/types';
 
@@ -55,8 +55,8 @@ export default function WeeklyBrief() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const { start, end, label } = getWeekBounds(weekOffset);
-  const dayDates = getDayDates(start);
+  const { start, end, label } = useMemo(() => getWeekBounds(weekOffset), [weekOffset]);
+  const dayDates = useMemo(() => getDayDates(start), [start]);
   const today = new Date();
 
   const loadTasks = useCallback(async () => {
@@ -68,7 +68,7 @@ export default function WeeklyBrief() {
     if (tasksRes.ok) setTasks(await tasksRes.json() as Task[]);
     if (projectsRes.ok) setProjects(await projectsRes.json() as Project[]);
     setLoading(false);
-  }, [start, end]);
+  }, [weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
@@ -93,7 +93,17 @@ export default function WeeklyBrief() {
           <ChevronLeft size={16} />
           Prev
         </button>
-        <span className="text-sm font-medium text-white">{label}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-white">{label}</span>
+          {weekOffset !== 0 && (
+            <button
+              onClick={() => setWeekOffset(0)}
+              className="px-2 py-0.5 rounded text-xs bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+            >
+              Today
+            </button>
+          )}
+        </div>
         <button
           onClick={() => setWeekOffset(o => o + 1)}
           className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
