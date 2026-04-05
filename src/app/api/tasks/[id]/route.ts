@@ -7,7 +7,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     title?: string;
     description?: string;
     status?: string;
+    priority?: string;
     position?: number;
+    due_at?: string | null;
+    weekly_brief?: boolean;
   };
 
   const { data, error } = await supabase

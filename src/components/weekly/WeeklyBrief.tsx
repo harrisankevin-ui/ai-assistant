@@ -78,13 +78,13 @@ export default function WeeklyBrief() {
   const loadTasks = useCallback(async () => {
     setLoading(true);
     const [tasksRes, projectsRes] = await Promise.all([
-      fetch(`/api/tasks?week_start=${start.toISOString()}&week_end=${end.toISOString()}`),
+      fetch('/api/tasks?weekly_brief=true'),
       fetch('/api/projects'),
     ]);
     if (tasksRes.ok) setTasks(await tasksRes.json() as Task[]);
     if (projectsRes.ok) setProjects(await projectsRes.json() as Project[]);
     setLoading(false);
-  }, [weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
@@ -128,6 +128,7 @@ export default function WeeklyBrief() {
           priority: quickPriority,
           project_id: quickProjectId || null,
           due_at: noonOnDay(day),
+          weekly_brief: true,
         }),
       });
       if (res.ok) {

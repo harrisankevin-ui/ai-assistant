@@ -95,6 +95,10 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
           description: 'ISO 8601 datetime when task is scheduled, with Toronto timezone offset. E.g. "2026-04-11T15:00:00-04:00" for 3pm EDT. Use noon (T12:00:00) if no specific time given. Leave unset if no date mentioned.',
         },
         project_id: { type: 'string', description: 'Optional project ID to associate this task with' },
+        weekly_brief: {
+          type: 'boolean',
+          description: 'Whether to show this task in the Weekly Brief calendar. Only set to true after the user explicitly confirms. Default: false.',
+        },
       },
       required: ['title'],
     },
@@ -121,6 +125,10 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
         due_at: {
           type: 'string',
           description: 'New scheduled datetime in ISO 8601 with Toronto timezone offset.',
+        },
+        weekly_brief: {
+          type: 'boolean',
+          description: 'Set to true to add this task to the Weekly Brief calendar view.',
         },
       },
       required: ['id'],
@@ -252,13 +260,14 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
       }
 
       case 'create_task': {
-        const { title, description = '', status = 'todo', priority = 'moderate', due_at, project_id } = input as {
+        const { title, description = '', status = 'todo', priority = 'moderate', due_at, project_id, weekly_brief = false } = input as {
           title: string;
           description?: string;
           status?: string;
           priority?: string;
           due_at?: string;
           project_id?: string;
+          weekly_brief?: boolean;
         };
         const { data: existing } = await supabase
           .from('tasks')
@@ -269,7 +278,7 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
         const position = existing && existing.length > 0 ? existing[0].position + 1 : 0;
         const { data, error } = await supabase
           .from('tasks')
-          .insert({ title, description, status, priority, due_at: due_at ?? null, position, project_id: project_id ?? null })
+          .insert({ title, description, status, priority, due_at: due_at ?? null, position, project_id: project_id ?? null, weekly_brief })
           .select()
           .single();
         if (error) throw error;
@@ -283,6 +292,8 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
           description?: string;
           status?: string;
           priority?: string;
+          due_at?: string | null;
+          weekly_brief?: boolean;
         };
         const { data, error } = await supabase
           .from('tasks')

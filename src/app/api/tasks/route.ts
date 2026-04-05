@@ -5,15 +5,20 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get('status');
   const projectId = searchParams.get('project');
+  const weeklyBrief = searchParams.get('weekly_brief');
 
   const weekStart = searchParams.get('week_start');
   const weekEnd = searchParams.get('week_end');
 
   let query = supabase
     .from('tasks')
-    .select('id, title, description, status, priority, position, project_id, due_at, created_at, updated_at');
+    .select('id, title, description, status, priority, position, project_id, due_at, weekly_brief, created_at, updated_at');
 
-  if (weekStart && weekEnd) {
+  if (weeklyBrief === 'true') {
+    query = query
+      .eq('weekly_brief', true)
+      .order('due_at', { ascending: true });
+  } else if (weekStart && weekEnd) {
     query = query
       .gte('due_at', weekStart)
       .lte('due_at', weekEnd)
@@ -38,6 +43,7 @@ export async function POST(req: NextRequest) {
     priority?: string;
     due_at?: string | null;
     project_id?: string | null;
+    weekly_brief?: boolean;
   };
 
   const taskStatus = body.status || 'todo';
@@ -62,6 +68,7 @@ export async function POST(req: NextRequest) {
       due_at: body.due_at ?? null,
       position,
       project_id: body.project_id ?? null,
+      weekly_brief: body.weekly_brief ?? false,
     })
     .select()
     .single();

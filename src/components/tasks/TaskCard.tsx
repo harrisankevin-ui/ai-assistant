@@ -11,6 +11,20 @@ const PRIORITY_BORDER: Record<string, string> = {
   low: 'border-l-green-500',
 };
 
+const PRIORITY_BADGE: Record<string, { bg: string; text: string; label: string }> = {
+  high:     { bg: 'bg-red-500/20',    text: 'text-red-400',    label: 'HIGH' },
+  moderate: { bg: 'bg-orange-500/20', text: 'text-orange-400', label: 'MED' },
+  low:      { bg: 'bg-teal-500/20',   text: 'text-teal-400',   label: 'LOW' },
+};
+
+function isToday(iso: string): boolean {
+  const d = new Date(iso);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+}
+
 function formatDueDate(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
@@ -35,6 +49,9 @@ export default function TaskCard({ task, projectLabel, onMove, onEdit, onDelete 
   const canMoveLeft = idx > 0;
   const canMoveRight = idx < STATUS_ORDER.length - 1;
   const borderClass = PRIORITY_BORDER[task.priority] ?? PRIORITY_BORDER.moderate;
+  const badge = PRIORITY_BADGE[task.priority] ?? PRIORITY_BADGE.moderate;
+  const showToday = task.priority === 'high' && task.due_at !== null && isToday(task.due_at);
+  const badgeText = showToday ? 'Today' : badge.label;
 
   return (
     <div className={`bg-gray-800 rounded-lg p-3 group border-l-2 ${borderClass}`}>
@@ -47,6 +64,9 @@ export default function TaskCard({ task, projectLabel, onMove, onEdit, onDelete 
           )}
           <p className="text-sm font-medium text-white leading-snug">{task.title}</p>
         </div>
+        <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0 ${badge.bg} ${badge.text}`}>
+          {badgeText}
+        </span>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <button
             onClick={() => onEdit(task)}

@@ -51,6 +51,7 @@ export interface Task {
   position: number;
   project_id: string | null;
   due_at: string | null;
+  weekly_brief: boolean;
   created_at: string;
   updated_at: string;
 }
