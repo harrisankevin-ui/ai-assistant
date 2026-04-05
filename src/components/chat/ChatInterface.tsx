@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Loader2, Wrench } from 'lucide-react';
+import { Loader2, Wrench } from 'lucide-react';
 import type { Conversation, Message } from '@/types';
 import ConversationList from './ConversationList';
 import MessageBubble from './MessageBubble';
@@ -165,11 +165,11 @@ export default function ChatInterface() {
         {!activeId ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto">
-                <Send size={28} className="text-white" />
+              <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-indigo-600/20">
+                <span className="text-2xl font-bold text-white">M</span>
               </div>
-              <h2 className="text-xl font-semibold text-white">Start a conversation</h2>
-              <p className="text-gray-400 text-sm">Create a new chat or select one from the sidebar</p>
+              <h2 className="text-xl font-semibold text-white">Hey Harrisan</h2>
+              <p className="text-gray-400 text-sm max-w-xs">What can I help you with today?</p>
               <button
                 onClick={createConversation}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"

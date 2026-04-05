@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import {
-  MessageSquare, FileText, BookOpen, Kanban, Bot,
+  MessageSquare, FileText, BookOpen, Kanban,
   ChevronDown, ChevronRight, Plus, Trash2, Circle, CalendarDays,
 } from 'lucide-react';
 import type { Project } from '@/types';
@@ -81,9 +81,9 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 py-5 border-b border-gray-800">
         <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-          <Bot size={16} className="text-white" />
+          <span className="text-sm font-bold text-white">M</span>
         </div>
-        <span className="font-semibold text-white">AI Assistant</span>
+        <span className="font-semibold text-white">Max</span>
       </div>
 
       {/* Navigation */}
@@ -217,7 +217,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-gray-800">
-        <p className="text-xs text-gray-500">Powered by Claude</p>
+        <p className="text-xs text-gray-500">Max v1</p>
       </div>
     </aside>
   );

@@ -128,7 +128,7 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
   },
   {
     name: 'list_tasks',
-    description: 'List tasks, optionally filtered by status, priority, or project',
+    description: 'List tasks, optionally filtered by status, priority, project, or date range. Use date_from/date_to to get tasks scheduled for a specific day or week.',
     input_schema: {
       type: 'object',
       properties: {
@@ -143,6 +143,8 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
           description: 'Filter by priority',
         },
         project_id: { type: 'string', description: 'Filter by project ID' },
+        date_from: { type: 'string', description: 'Filter tasks with due_at on or after this date. Use YYYY-MM-DD format. E.g. "2026-04-07" for tasks due on or after April 7.' },
+        date_to:   { type: 'string', description: 'Filter tasks with due_at on or before this date. Use YYYY-MM-DD format. E.g. "2026-04-13" for tasks due on or before April 13.' },
       },
       required: [],
     },
@@ -293,15 +295,23 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
       }
 
       case 'list_tasks': {
-        const { status, priority, project_id } = input as { status?: string; priority?: string; project_id?: string };
+        const { status, priority, project_id, date_from, date_to } = input as {
+          status?: string;
+          priority?: string;
+          project_id?: string;
+          date_from?: string;
+          date_to?: string;
+        };
         let q = supabase
           .from('tasks')
-          .select('id, title, description, status, priority, project_id, position')
+          .select('id, title, description, status, priority, project_id, position, due_at')
           .order('status')
           .order('position');
         if (status) q = q.eq('status', status);
         if (priority) q = q.eq('priority', priority);
         if (project_id) q = q.eq('project_id', project_id);
+        if (date_from) q = q.gte('due_at', date_from);
+        if (date_to) q = q.lte('due_at', date_to + 'T23:59:59');
         const { data, error } = await q;
         if (error) throw error;
         if (!data || data.length === 0) return 'No tasks found.';

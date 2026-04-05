@@ -31,8 +31,8 @@ export default function TaskModal({ task, defaultStatus = 'todo', onSave, onClos
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 border border-gray-800 ring-1 ring-white/5 rounded-2xl w-full max-w-md shadow-2xl">
         <div className="flex items-center justify-between p-4 border-b border-gray-800">
           <h2 className="text-sm font-semibold text-white">
             {task?.id ? 'Edit Task' : 'New Task'}
@@ -49,7 +49,7 @@ export default function TaskModal({ task, defaultStatus = 'todo', onSave, onClos
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Task title…"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 transition-colors"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-400/20 transition-colors"
               autoFocus
             />
           </div>
@@ -61,7 +61,7 @@ export default function TaskModal({ task, defaultStatus = 'todo', onSave, onClos
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional description…"
               rows={3}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 transition-colors resize-none"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-400/20 transition-colors resize-none"
             />
           </div>
 

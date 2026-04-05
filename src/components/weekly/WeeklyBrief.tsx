@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import type { Task, Project } from '@/types';
 
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -49,11 +49,27 @@ function formatTime(iso: string): string {
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
+// Returns noon on the given day in Toronto timezone offset (EDT = -4, EST = -5)
+function noonOnDay(date: Date): string {
+  const month = date.getMonth(); // 0-indexed
+  const offsetHours = (month >= 3 && month <= 9) ? 4 : 5; // Apr–Oct = EDT (-4), else EST (-5)
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T12:00:00-0${offsetHours}:00`;
+}
+
 export default function WeeklyBrief() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Quick-add state
+  const [addingDay, setAddingDay] = useState<string | null>(null); // day.toDateString() key
+  const [quickTitle, setQuickTitle] = useState('');
+  const [quickPriority, setQuickPriority] = useState<'low' | 'moderate' | 'high'>('moderate');
+  const [quickProjectId, setQuickProjectId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const quickInputRef = useRef<HTMLInputElement>(null);
 
   const { start, end, label } = useMemo(() => getWeekBounds(weekOffset), [weekOffset]);
   const dayDates = useMemo(() => getDayDates(start), [start]);
@@ -72,6 +88,13 @@ export default function WeeklyBrief() {
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
+  // Focus the quick-add input when it opens
+  useEffect(() => {
+    if (addingDay) {
+      setTimeout(() => quickInputRef.current?.focus(), 0);
+    }
+  }, [addingDay]);
+
   const projectName = (id: string | null) =>
     id ? (projects.find(p => p.id === id)?.name ?? null) : null;
 
@@ -79,6 +102,43 @@ export default function WeeklyBrief() {
     tasks
       .filter(t => t.due_at && isSameDay(new Date(t.due_at), day))
       .sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime());
+
+  const openQuickAdd = (day: Date) => {
+    setAddingDay(day.toDateString());
+    setQuickTitle('');
+    setQuickPriority('moderate');
+    setQuickProjectId('');
+  };
+
+  const cancelQuickAdd = () => {
+    setAddingDay(null);
+    setQuickTitle('');
+  };
+
+  const submitQuickAdd = async (day: Date) => {
+    if (!quickTitle.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: quickTitle.trim(),
+          status: 'todo',
+          priority: quickPriority,
+          project_id: quickProjectId || null,
+          due_at: noonOnDay(day),
+        }),
+      });
+      if (res.ok) {
+        const created = await res.json() as Task;
+        setTasks(prev => [...prev, created]);
+      }
+    } finally {
+      setSubmitting(false);
+      cancelQuickAdd();
+    }
+  };
 
   return (
     <div className="h-full flex flex-col p-6 overflow-hidden">
@@ -116,6 +176,7 @@ export default function WeeklyBrief() {
         {dayDates.map((day, i) => {
           const isToday = isSameDay(day, today);
           const dayTasks = tasksForDay(day);
+          const isAddingThisDay = addingDay === day.toDateString();
 
           return (
             <div
@@ -123,17 +184,85 @@ export default function WeeklyBrief() {
               className={`flex flex-col rounded-xl overflow-hidden ${isToday ? 'ring-1 ring-indigo-500' : ''}`}
             >
               {/* Day header */}
-              <div className={`px-2 py-2.5 text-center shrink-0 ${isToday ? 'bg-indigo-600' : 'bg-gray-800'}`}>
-                <div className={`text-xs font-semibold tracking-wider ${isToday ? 'text-indigo-100' : 'text-gray-400'}`}>
-                  {DAYS[i]}
-                </div>
-                <div className={`text-lg font-bold leading-tight ${isToday ? 'text-white' : 'text-gray-300'}`}>
-                  {day.getDate()}
+              <div className={`px-2 py-2 shrink-0 ${isToday ? 'bg-indigo-600' : 'bg-gray-800'}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className={`text-xs font-semibold tracking-wider ${isToday ? 'text-indigo-100' : 'text-gray-400'}`}>
+                      {DAYS[i]}
+                    </div>
+                    <div className={`text-lg font-bold leading-tight ${isToday ? 'text-white' : 'text-gray-300'}`}>
+                      {day.getDate()}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => isAddingThisDay ? cancelQuickAdd() : openQuickAdd(day)}
+                    className={`p-1 rounded transition-colors ${
+                      isToday
+                        ? 'text-indigo-200 hover:text-white hover:bg-indigo-500'
+                        : 'text-gray-600 hover:text-white hover:bg-gray-700'
+                    }`}
+                    title="Add task"
+                  >
+                    <Plus size={13} />
+                  </button>
                 </div>
               </div>
 
               {/* Tasks */}
               <div className="flex-1 bg-gray-900 p-1.5 overflow-y-auto space-y-1.5">
+                {/* Quick-add form */}
+                {isAddingThisDay && (
+                  <div className="mb-1 p-2 bg-gray-800 rounded-lg border border-gray-700">
+                    <input
+                      ref={quickInputRef}
+                      value={quickTitle}
+                      onChange={e => setQuickTitle(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') submitQuickAdd(day);
+                        if (e.key === 'Escape') cancelQuickAdd();
+                      }}
+                      placeholder="Task name…"
+                      className="w-full bg-transparent text-xs text-white placeholder-gray-500 outline-none mb-2"
+                    />
+                    <div className="flex gap-1">
+                      <select
+                        value={quickProjectId}
+                        onChange={e => setQuickProjectId(e.target.value)}
+                        className="flex-1 min-w-0 bg-gray-700 text-xs text-gray-300 rounded px-1.5 py-1 outline-none border-none"
+                      >
+                        <option value="">No project</option>
+                        {projects.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={quickPriority}
+                        onChange={e => setQuickPriority(e.target.value as 'low' | 'moderate' | 'high')}
+                        className="bg-gray-700 text-xs text-gray-300 rounded px-1 py-1 outline-none border-none"
+                      >
+                        <option value="low">Low</option>
+                        <option value="moderate">Med</option>
+                        <option value="high">High</option>
+                      </select>
+                    </div>
+                    <div className="flex gap-1 mt-1.5">
+                      <button
+                        onClick={() => submitQuickAdd(day)}
+                        disabled={!quickTitle.trim() || submitting}
+                        className="flex-1 py-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded text-xs transition-colors"
+                      >
+                        Add
+                      </button>
+                      <button
+                        onClick={cancelQuickAdd}
+                        className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-400 rounded text-xs transition-colors"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {dayTasks.map(task => (
                   <div
                     key={task.id}
@@ -160,7 +289,6 @@ export default function WeeklyBrief() {
           );
         })}
       </div>
-
     </div>
   );
 }
