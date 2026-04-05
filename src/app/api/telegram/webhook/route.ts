@@ -3,6 +3,7 @@ import type TelegramBot from 'node-telegram-bot-api';
 import { handleTelegramUpdate } from '@/lib/telegram';
 
 export const runtime = 'nodejs';
+export const maxDuration = 55;
 
 export async function POST(req: NextRequest) {
   try {

@@ -85,6 +85,11 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
           enum: ['todo', 'in_progress', 'done'],
           description: 'Initial status (defaults to todo)',
         },
+        priority: {
+          type: 'string',
+          enum: ['low', 'moderate', 'high'],
+          description: 'Task priority — infer from urgency/deadlines. Defaults to moderate.',
+        },
         project_id: { type: 'string', description: 'Optional project ID to associate this task with' },
       },
       required: ['title'],
@@ -104,13 +109,18 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
           enum: ['todo', 'in_progress', 'done'],
           description: 'New status',
         },
+        priority: {
+          type: 'string',
+          enum: ['low', 'moderate', 'high'],
+          description: 'New priority',
+        },
       },
       required: ['id'],
     },
   },
   {
     name: 'list_tasks',
-    description: 'List tasks, optionally filtered by status or project',
+    description: 'List tasks, optionally filtered by status, priority, or project',
     input_schema: {
       type: 'object',
       properties: {
@@ -119,9 +129,42 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
           enum: ['todo', 'in_progress', 'done'],
           description: 'Filter by status',
         },
+        priority: {
+          type: 'string',
+          enum: ['low', 'moderate', 'high'],
+          description: 'Filter by priority',
+        },
         project_id: { type: 'string', description: 'Filter by project ID' },
       },
       required: [],
+    },
+  },
+  {
+    name: 'save_memory',
+    description: "Save a fact about Harrisan for future reference. Use this when you learn his name, preferences, timezone, project context, or anything worth remembering across conversations. Using an existing key overwrites the previous value.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        key: { type: 'string', description: 'Unique snake_case identifier, e.g. "user_name", "timezone", "prefers_bullet_lists"' },
+        value: { type: 'string', description: 'The fact or preference to remember' },
+        category: {
+          type: 'string',
+          enum: ['user_fact', 'preference', 'context'],
+          description: 'user_fact = personal info; preference = how Harrisan likes things done; context = project or situational notes',
+        },
+      },
+      required: ['key', 'value', 'category'],
+    },
+  },
+  {
+    name: 'delete_memory',
+    description: 'Delete a saved memory by its key when it becomes stale or incorrect.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        key: { type: 'string', description: 'The key of the memory to delete' },
+      },
+      required: ['key'],
     },
   },
 ];
@@ -199,10 +242,11 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
       }
 
       case 'create_task': {
-        const { title, description = '', status = 'todo', project_id } = input as {
+        const { title, description = '', status = 'todo', priority = 'moderate', project_id } = input as {
           title: string;
           description?: string;
           status?: string;
+          priority?: string;
           project_id?: string;
         };
         const { data: existing } = await supabase
@@ -214,11 +258,11 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
         const position = existing && existing.length > 0 ? existing[0].position + 1 : 0;
         const { data, error } = await supabase
           .from('tasks')
-          .insert({ title, description, status, position, project_id: project_id ?? null })
+          .insert({ title, description, status, priority, position, project_id: project_id ?? null })
           .select()
           .single();
         if (error) throw error;
-        return `Created task "${data.title}" (${data.status}) with ID ${data.id}`;
+        return `Created task "${data.title}" [${data.priority} priority, ${data.status}] with ID ${data.id}`;
       }
 
       case 'update_task': {
@@ -227,6 +271,7 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
           title?: string;
           description?: string;
           status?: string;
+          priority?: string;
         };
         const { data, error } = await supabase
           .from('tasks')
@@ -235,18 +280,42 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
           .select()
           .single();
         if (error) throw error;
-        return `Updated task "${data.title}" — status: ${data.status}`;
+        return `Updated task "${data.title}" — ${data.priority} priority, ${data.status}`;
       }
 
       case 'list_tasks': {
-        const { status, project_id } = input as { status?: string; project_id?: string };
-        let q = supabase.from('tasks').select('id, title, description, status, project_id, position').order('status').order('position');
+        const { status, priority, project_id } = input as { status?: string; priority?: string; project_id?: string };
+        let q = supabase
+          .from('tasks')
+          .select('id, title, description, status, priority, project_id, position')
+          .order('status')
+          .order('position');
         if (status) q = q.eq('status', status);
+        if (priority) q = q.eq('priority', priority);
         if (project_id) q = q.eq('project_id', project_id);
         const { data, error } = await q;
         if (error) throw error;
         if (!data || data.length === 0) return 'No tasks found.';
         return JSON.stringify(data, null, 2);
+      }
+
+      case 'save_memory': {
+        const { key, value, category } = input as { key: string; value: string; category: string };
+        const { error } = await supabase
+          .from('memories')
+          .upsert(
+            { key, value, category, updated_at: new Date().toISOString() },
+            { onConflict: 'key' }
+          );
+        if (error) throw error;
+        return `Memory saved: "${key}" = "${value}"`;
+      }
+
+      case 'delete_memory': {
+        const { key } = input as { key: string };
+        const { error } = await supabase.from('memories').delete().eq('key', key);
+        if (error) throw error;
+        return `Memory deleted: "${key}"`;
       }
 
       default:

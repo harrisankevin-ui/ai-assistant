@@ -1,9 +1,10 @@
 import TelegramBot from 'node-telegram-bot-api';
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
+import { anthropic, MODEL, buildSystemPrompt } from './anthropic';
 import { supabase } from './supabase';
+import { TOOL_DEFINITIONS, executeTool } from './tools';
 
 let bot: TelegramBot | null = null;
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? 'placeholder' });
 
 export function getTelegramBot(): TelegramBot | null {
   if (!process.env.TELEGRAM_BOT_TOKEN) return null;
@@ -13,209 +14,122 @@ export function getTelegramBot(): TelegramBot | null {
   return bot;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────────────────────────────────────
-
-async function getProjects() {
-  const { data } = await supabase.from('projects').select('id, name').order('created_at');
-  return data ?? [];
-}
-
-async function getUpcomingTasks(projectId?: string) {
-  let q = supabase.from('tasks').select('title, status, project_id').neq('status', 'done').order('status').order('position').limit(20);
-  if (projectId) q = q.eq('project_id', projectId);
-  const { data } = await q;
-  return data ?? [];
-}
-
-async function getUpcomingReminders(chatId: number) {
+async function getOrCreateTelegramConversation(chatId: number): Promise<string> {
   const { data } = await supabase
-    .from('reminders')
-    .select('text, due_at')
+    .from('conversations')
+    .select('id')
     .eq('telegram_chat_id', chatId)
-    .eq('sent', false)
-    .gte('due_at', new Date().toISOString())
-    .order('due_at')
-    .limit(5);
-  return data ?? [];
+    .single();
+
+  if (data) return data.id;
+
+  const { data: newConv, error } = await supabase
+    .from('conversations')
+    .insert({ title: 'Telegram', telegram_chat_id: chatId })
+    .select('id')
+    .single();
+
+  if (error || !newConv) throw new Error('Failed to create Telegram conversation');
+  return newConv.id;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Intent detection
-// ──────────────────────────────────────────────────────────────────────────────
+async function loadHistory(conversationId: string): Promise<Anthropic.MessageParam[]> {
+  const { data } = await supabase
+    .from('messages')
+    .select('role, content')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: false })
+    .limit(40);
 
-interface IntentResult {
-  intent: 'create_task' | 'create_reminder' | 'briefing' | 'project_tasks' | 'chat';
-  task_title?: string;
-  task_status?: 'todo' | 'in_progress' | 'done';
-  project_name?: string;
-  reminder_text?: string;
-  reminder_due_iso?: string;
-  reply_text: string;
+  return (data ?? []).reverse().map((m) => ({
+    role: m.role as 'user' | 'assistant',
+    content: m.content,
+  }));
 }
 
-async function detectIntent(userText: string, chatId: number): Promise<IntentResult> {
-  const projects = await getProjects();
-  const projectList = projects.length
-    ? `Known projects: ${projects.map(p => p.name).join(', ')}`
-    : 'No projects yet.';
-
-  const now = new Date().toISOString();
-
-  const systemPrompt = `You are an intent classifier for a personal AI assistant. The current date/time is ${now}.
-${projectList}
-
-Given the user's message, respond ONLY with a valid JSON object with these fields:
-- intent: one of "create_task", "create_reminder", "briefing", "project_tasks", "chat"
-- task_title: (if intent=create_task) the task title string
-- task_status: (if intent=create_task) "todo" | "in_progress" | "done", default "todo"
-- project_name: (if intent=create_task or project_tasks) the project name as given in the known list, or null
-- reminder_text: (if intent=create_reminder) the reminder description
-- reminder_due_iso: (if intent=create_reminder) ISO 8601 datetime string for when to fire
-- reply_text: a short, friendly confirmation or response to send back to the user
-
-Rules:
-- "add task", "create task", "new task", "remind me to", "put X on my list" → create_task
-- "remind me at/on/by [time]", "set a reminder" → create_reminder
-- "what's my day", "what do I have today", "/briefing", "day overview" → briefing
-- "what do I have for [project]", "show [project] tasks" → project_tasks
-- Everything else → chat (reply_text is a normal conversational response)
-- Respond ONLY with raw JSON. No markdown, no code fences.`;
-
-  const response = await anthropic.messages.create({
-    model: 'claude-opus-4-6',
-    max_tokens: 512,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userText }],
-  });
-
-  const raw = response.content
-    .filter(b => b.type === 'text')
-    .map(b => (b as { type: 'text'; text: string }).text)
-    .join('');
-  return JSON.parse(raw) as IntentResult;
+async function saveMessage(conversationId: string, role: 'user' | 'assistant', content: string): Promise<void> {
+  await supabase.from('messages').insert({ conversation_id: conversationId, role, content });
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Action handlers
-// ──────────────────────────────────────────────────────────────────────────────
+export async function runMaxLoop(userText: string, chatId: number): Promise<string> {
+  const conversationId = await getOrCreateTelegramConversation(chatId);
+  await saveMessage(conversationId, 'user', userText);
 
-async function handleCreateTask(result: IntentResult): Promise<string> {
-  const projects = await getProjects();
-  let projectId: string | null = null;
-  if (result.project_name) {
-    const match = projects.find(p => p.name.toLowerCase() === result.project_name!.toLowerCase());
-    projectId = match?.id ?? null;
-  }
-  const status = result.task_status ?? 'todo';
-  const { data: existing } = await supabase.from('tasks').select('position').eq('status', status).order('position', { ascending: false }).limit(1);
-  const position = existing && existing.length > 0 ? existing[0].position + 1 : 0;
-  const { error } = await supabase.from('tasks').insert({
-    title: result.task_title,
-    description: '',
-    status,
-    position,
-    project_id: projectId,
-  });
-  if (error) return `Error creating task: ${error.message}`;
-  return result.reply_text;
-}
+  const history = await loadHistory(conversationId);
+  const systemPrompt = await buildSystemPrompt();
 
-async function handleCreateReminder(result: IntentResult, chatId: number): Promise<string> {
-  if (!result.reminder_due_iso) return 'I couldn\'t parse that time. Try: "remind me Friday 3pm to check in"';
-  const { error } = await supabase.from('reminders').insert({
-    text: result.reminder_text,
-    due_at: result.reminder_due_iso,
-    telegram_chat_id: chatId,
-    sent: false,
-  });
-  if (error) return `Error saving reminder: ${error.message}`;
-  return result.reply_text;
-}
+  const messages: Anthropic.MessageParam[] = history;
+  let fullText = '';
+  let continueLoop = true;
 
-async function handleBriefing(chatId: number): Promise<string> {
-  const [tasks, reminders] = await Promise.all([
-    getUpcomingTasks(),
-    getUpcomingReminders(chatId),
-  ]);
-  const lines: string[] = ['📋 *Your Day*\n'];
-  if (tasks.length === 0) {
-    lines.push('No open tasks.');
-  } else {
-    const emoji: Record<string, string> = { todo: '⬜', in_progress: '🔄' };
-    lines.push('*Tasks:*');
-    tasks.forEach(t => lines.push(`${emoji[t.status] ?? '•'} ${t.title}`));
-  }
-  if (reminders.length > 0) {
-    lines.push('\n*Upcoming Reminders:*');
-    reminders.forEach(r => {
-      const dt = new Date(r.due_at).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-      lines.push(`🔔 ${dt} — ${r.text}`);
+  while (continueLoop) {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 1024,
+      system: systemPrompt,
+      tools: TOOL_DEFINITIONS,
+      messages,
     });
+
+    for (const block of response.content) {
+      if (block.type === 'text') fullText += block.text;
+    }
+
+    if (response.stop_reason === 'tool_use') {
+      messages.push({ role: 'assistant', content: response.content });
+
+      const toolResults: Anthropic.ToolResultBlockParam[] = [];
+      for (const block of response.content) {
+        if (block.type === 'tool_use') {
+          const result = await executeTool(block.name, block.input as Record<string, unknown>);
+          toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: result });
+        }
+      }
+      messages.push({ role: 'user', content: toolResults });
+    } else {
+      continueLoop = false;
+    }
   }
-  return lines.join('\n');
-}
 
-async function handleProjectTasks(result: IntentResult): Promise<string> {
-  const projects = await getProjects();
-  const match = result.project_name
-    ? projects.find(p => p.name.toLowerCase() === result.project_name!.toLowerCase())
-    : null;
-  const tasks = await getUpcomingTasks(match?.id);
-  if (tasks.length === 0) return match ? `No open tasks for ${match.name}.` : 'No open tasks found.';
-  const emoji: Record<string, string> = { todo: '⬜', in_progress: '🔄' };
-  const header = match ? `📋 *${match.name} Tasks*\n` : '📋 *All Open Tasks*\n';
-  const list = tasks.map(t => `${emoji[t.status] ?? '•'} ${t.title}`).join('\n');
-  return header + list;
-}
+  if (fullText) {
+    await saveMessage(conversationId, 'assistant', fullText);
+  }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Main entry point
-// ──────────────────────────────────────────────────────────────────────────────
+  return fullText || 'Done.';
+}
 
 export async function handleTelegramUpdate(update: TelegramBot.Update): Promise<void> {
-  const telegramBot = getTelegramBot();
-  if (!telegramBot) return;
+  const b = getTelegramBot();
+  if (!b) return;
 
   const message = update.message;
-  if (!message || !message.text) return;
+  if (!message?.text || !message.chat?.id) return;
 
   const chatId = message.chat.id;
   const text = message.text.trim();
 
+  if (text === '/start') {
+    await b.sendMessage(
+      chatId,
+      `Hey Harrisan — I'm Max, your personal assistant.\n\nI'm the same Max from your dashboard. Same memory, same tools, same context.\n\nI can create tasks, set reminders, manage your projects, and help you stay organized. Just talk to me naturally.`
+    );
+    return;
+  }
+
   try {
-    if (text === '/start') {
-      await telegramBot.sendMessage(
-        chatId,
-        '👋 Hi! I\'m your personal AI assistant.\n\nJust text me naturally:\n• "add task: email the sponsor"\n• "add task to Softball: buy new gloves"\n• "remind me Friday 3pm to check the schedule"\n• "what\'s my day?"\n• "what do I have for Softball?"\n\nOr just chat!'
-      );
-      return;
+    await b.sendChatAction(chatId, 'typing');
+    const reply = await runMaxLoop(text, chatId);
+
+    if (reply.length <= 4096) {
+      await b.sendMessage(chatId, reply);
+    } else {
+      const chunks = reply.match(/.{1,4000}(\n|$)/gs) ?? [reply.slice(0, 4000)];
+      for (const chunk of chunks) {
+        await b.sendMessage(chatId, chunk);
+      }
     }
-
-    const result = await detectIntent(text, chatId);
-
-    let reply: string;
-    switch (result.intent) {
-      case 'create_task':
-        reply = await handleCreateTask(result);
-        break;
-      case 'create_reminder':
-        reply = await handleCreateReminder(result, chatId);
-        break;
-      case 'briefing':
-        reply = await handleBriefing(chatId);
-        break;
-      case 'project_tasks':
-        reply = await handleProjectTasks(result);
-        break;
-      default:
-        reply = result.reply_text || 'I\'m not sure how to help with that.';
-    }
-
-    await telegramBot.sendMessage(chatId, reply, { parse_mode: 'Markdown' });
   } catch (err) {
     console.error('Telegram handler error:', err);
-    await telegramBot.sendMessage(chatId, 'Sorry, something went wrong. Please try again.');
+    await b.sendMessage(chatId, 'Something went wrong. Try again in a moment.');
   }
 }

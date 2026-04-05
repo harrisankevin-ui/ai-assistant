@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type Anthropic from '@anthropic-ai/sdk';
-import { anthropic, MODEL, SYSTEM_PROMPT } from '@/lib/anthropic';
+import { anthropic, MODEL, buildSystemPrompt } from '@/lib/anthropic';
 import { supabase } from '@/lib/supabase';
 import { TOOL_DEFINITIONS, executeTool } from '@/lib/tools';
 
@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
     { role: 'user', content: message },
   ];
 
+  const systemPrompt = await buildSystemPrompt();
+
   // SSE stream
   const encoder = new TextEncoder();
   let fullAssistantText = '';
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
           const claudeStream = anthropic.messages.stream({
             model: MODEL,
             max_tokens: 4096,
-            system: SYSTEM_PROMPT,
+            system: systemPrompt,
             tools: TOOL_DEFINITIONS,
             messages,
           });
