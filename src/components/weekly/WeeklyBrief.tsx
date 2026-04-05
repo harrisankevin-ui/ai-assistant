@@ -80,8 +80,6 @@ export default function WeeklyBrief() {
       .filter(t => t.due_at && isSameDay(new Date(t.due_at), day))
       .sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime());
 
-  const hasAnyTasks = tasks.length > 0;
-
   return (
     <div className="h-full flex flex-col p-6 overflow-hidden">
       {/* Week navigation */}
@@ -163,15 +161,6 @@ export default function WeeklyBrief() {
         })}
       </div>
 
-      {/* Empty state */}
-      {!loading && !hasAnyTasks && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="text-center">
-            <p className="text-gray-500 text-sm">No scheduled tasks this week.</p>
-            <p className="text-gray-600 text-xs mt-1">Ask Max to schedule something.</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
