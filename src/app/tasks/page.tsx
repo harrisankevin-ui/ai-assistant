@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Project } from '@/types';
 import KanbanBoard from '@/components/tasks/KanbanBoard';
+import MobileTaskList from '@/components/tasks/MobileTaskList';
 
 const PROJECT_COLORS = [
   'indigo', 'green', 'orange', 'pink', 'yellow', 'cyan', 'purple', 'red',
@@ -37,7 +38,15 @@ export default function TasksPage() {
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('indigo');
+  const [isMobile, setIsMobile] = useState(false);
   const addInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     fetch('/api/projects').then(r => r.ok ? r.json() : []).then(setProjects);
@@ -87,8 +96,15 @@ export default function TasksPage() {
         </p>
       </div>
 
-      {/* Project filter tab bar */}
-      <div className="flex items-center gap-2 overflow-x-auto px-6 py-3 border-b border-gray-800 shrink-0">
+      {/* Mobile view */}
+      {isMobile && (
+        <div className="flex-1 overflow-hidden">
+          <MobileTaskList projectId={null} />
+        </div>
+      )}
+
+      {/* Desktop: project filter tab bar */}
+      {!isMobile && <div className="flex items-center gap-2 overflow-x-auto px-6 py-3 border-b border-gray-800 shrink-0">
         {/* All Tasks tab */}
         <button
           onClick={() => setSelectedProjectId(null)}
@@ -169,12 +185,14 @@ export default function TasksPage() {
             Add Project
           </button>
         )}
-      </div>
+      </div>}
 
-      {/* Kanban board */}
-      <div className="flex-1 overflow-hidden">
-        <KanbanBoard projectId={selectedProjectId} />
-      </div>
+      {/* Desktop: Kanban board */}
+      {!isMobile && (
+        <div className="flex-1 overflow-hidden">
+          <KanbanBoard projectId={selectedProjectId} />
+        </div>
+      )}
     </div>
   );
 }

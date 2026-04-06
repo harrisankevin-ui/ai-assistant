@@ -1,4 +1,4 @@
-const CACHE = 'ai-assistant-v1';
+const CACHE = 'ai-assistant-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
