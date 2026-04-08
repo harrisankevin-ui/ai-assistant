@@ -25,13 +25,25 @@ export async function GET(req: NextRequest) {
       .not('due_at', 'is', null)
       .order('due_at', { ascending: true });
   } else {
-    query = query.eq('archived', false);
     if (status) query = query.eq('status', status);
     if (projectId) query = query.eq('project_id', projectId);
-    query = query.order('status').order('position');
+    query = query.eq('archived', false).order('status').order('position');
   }
 
-  const { data, error } = await query;
+  let { data, error } = await query;
+
+  // If archived column doesn't exist yet (migration pending), retry without that filter
+  if (error && error.message?.includes('archived')) {
+    const fallback = supabase
+      .from('tasks')
+      .select('id, title, description, status, priority, position, project_id, due_at, weekly_brief, archived, completed_at, created_at, updated_at');
+    if (status) fallback.eq('status', status);
+    if (projectId) fallback.eq('project_id', projectId);
+    const result = await fallback.order('status').order('position');
+    data = result.data;
+    error = result.error;
+  }
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
