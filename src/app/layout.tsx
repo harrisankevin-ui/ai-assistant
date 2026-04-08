@@ -31,11 +31,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js?v=2');` }} />
       </head>
-      <body className="bg-gray-950 text-gray-100 h-[100dvh] flex overflow-hidden">
-        <Suspense fallback={<div className="hidden md:flex w-56 bg-gray-900 border-r border-gray-800 shrink-0" />}>
+      <body className="bg-[#0a0a0f] text-gray-100 h-[100dvh] flex overflow-hidden">
+        <Suspense fallback={<div className="hidden lg:flex w-[260px] bg-[#18181b] border-r border-white/[0.08] shrink-0" />}>
           <Sidebar />
         </Suspense>
-        <main className="flex-1 overflow-hidden pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
+        <main className="flex-1 overflow-hidden pb-20 lg:pb-0">
           {children}
         </main>
         <BottomNav />
