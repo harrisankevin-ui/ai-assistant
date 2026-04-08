@@ -318,9 +318,11 @@ export default function WeeklyBrief() {
       </div>
 
       {/* ── MOBILE: Date selector + timeline ─────────────────────────────── */}
-      <div className="lg:hidden flex flex-col h-full bg-[#0a0a0f] overflow-hidden">
+      <div className="lg:hidden flex flex-col h-full bg-[#0a0a0f] overflow-hidden relative">
+        {/* Ambient top glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-[#4f46e5]/10 rounded-full blur-[100px] pointer-events-none z-0" />
         {/* Sticky header */}
-        <div className="px-5 pt-10 pb-4 bg-[#18181b]/80 backdrop-blur-2xl border-b border-white/[0.08] z-20 sticky top-0">
+        <div className="px-5 pt-10 pb-4 bg-[#18181b]/80 backdrop-blur-2xl border-b border-white/[0.08] z-20 sticky top-0 relative">
           {/* Month label + nav */}
           <div className="flex items-center justify-between mb-5">
             <h1 className="text-[26px] font-semibold text-white tracking-tight">{label.split(',')[0]}</h1>
@@ -378,7 +380,7 @@ export default function WeeklyBrief() {
         </div>
 
         {/* Timeline body */}
-        <div className="flex-1 overflow-y-auto relative pb-4">
+        <div className="flex-1 overflow-y-auto relative pb-4 z-10">
           {/* Floating + button */}
           {addingDay !== dayDates[selectedDayIdx].toDateString() && (
             <button

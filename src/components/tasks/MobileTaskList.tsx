@@ -111,9 +111,11 @@ export default function MobileTaskList({ projectId }: Props) {
   ].filter(g => g.tasks.length > 0);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden relative">
+      {/* Ambient top glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-[#4f46e5]/10 rounded-full blur-[100px] pointer-events-none z-0" />
       {/* Project filter pills */}
-      <div className="flex gap-2 px-4 pt-3 pb-1 overflow-x-auto shrink-0 scrollbar-none">
+      <div className="flex gap-2 px-4 pt-3 pb-1 overflow-x-auto shrink-0 scrollbar-none z-10 relative">
         <button
           onClick={() => setSelectedProject(null)}
           className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
@@ -137,7 +139,7 @@ export default function MobileTaskList({ projectId }: Props) {
       </div>
 
       {/* Status tabs */}
-      <div className="flex gap-2 px-4 py-2 overflow-x-auto shrink-0 scrollbar-none">
+      <div className="flex gap-2 px-4 py-2 overflow-x-auto shrink-0 scrollbar-none z-10 relative">
         {STATUS_TABS.map(tab => (
           <button
             key={tab}
@@ -152,7 +154,7 @@ export default function MobileTaskList({ projectId }: Props) {
       </div>
 
       {/* Task list */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-4 z-10 relative">
         {groups.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 gap-2">
             <CheckCircle2 size={36} className="text-gray-700" />
