@@ -317,17 +317,18 @@ export default function MemoryPage() {
           /* Mobile list view */
           <>
             {/* Header */}
-            <div className="px-5 pt-14 pb-4 sticky top-0 bg-[#0a0a0f]/80 backdrop-blur-xl z-20 border-b border-white/[0.05]">
-              <h1 className="text-[34px] font-bold text-white tracking-tight mb-4">Memory</h1>
+            <div className="px-5 pt-5 pb-3 sticky top-0 bg-[#0a0a0f]/80 backdrop-blur-xl z-20 border-b border-white/[0.05]">
+              <h1 className="text-[20px] font-semibold text-white tracking-tight mb-3">Memory</h1>
 
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9ca3af]" />
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
                 <input
                   type="text"
-                  placeholder="Search"
+                  placeholder="Search notes, docs…"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-[#1c1c1e] text-white placeholder-[#9ca3af] rounded-xl focus:outline-none focus:bg-[#2c2c2e] transition-colors text-[17px]"
+                  className="w-full pl-9 pr-4 py-2 bg-[#1c1c1e] text-white placeholder-[#9ca3af] rounded-xl focus:outline-none focus:bg-[#2c2c2e] transition-colors"
+                  style={{ fontSize: '16px' }}
                 />
               </div>
 

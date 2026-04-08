@@ -217,17 +217,17 @@ export default function ChatInterface() {
             </div>
 
             {/* Input */}
-            <div className="p-4 border-t border-gray-800">
+            <div className="px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+68px)] lg:pb-4 border-t border-gray-800">
               <div className="flex gap-3 items-end bg-gray-800 rounded-xl px-4 py-3">
                 <textarea
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Message Max… (Enter to send, Shift+Enter for newline)"
+                  placeholder="Message Max…"
                   rows={1}
-                  className="flex-1 bg-transparent text-sm text-gray-100 placeholder-gray-500 resize-none outline-none max-h-40"
-                  style={{ minHeight: '1.5rem' }}
+                  className="flex-1 bg-transparent text-gray-100 placeholder-gray-500 resize-none outline-none max-h-40"
+                  style={{ minHeight: '1.5rem', fontSize: '16px' }}
                 />
                 <button
                   onClick={sendMessage}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, CheckCircle2, Circle } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle, Loader } from 'lucide-react';
 import type { Task, Project } from '@/types';
 
 const PRIORITY_BORDER: Record<string, string> = {
@@ -22,11 +22,17 @@ const DOT_CLASSES: Record<string, string> = {
   purple: 'bg-purple-400', red: 'bg-red-400',
 };
 
-const STATUS_TABS = ['All', 'Todo', 'In Progress', 'Done'] as const;
+const STATUS_TABS = ['All', 'To Do', 'In Progress', 'Done'] as const;
 type StatusTab = typeof STATUS_TABS[number];
 
 const STATUS_MAP: Record<StatusTab, string | null> = {
-  'All': null, 'Todo': 'todo', 'In Progress': 'in_progress', 'Done': 'done',
+  'All': null, 'To Do': 'todo', 'In Progress': 'in_progress', 'Done': 'done',
+};
+
+const NEXT_STATUS: Record<string, string> = {
+  'todo': 'in_progress',
+  'in_progress': 'done',
+  'done': 'todo',
 };
 
 function isToday(iso: string): boolean {
@@ -71,8 +77,8 @@ export default function MobileTaskList({ projectId }: Props) {
   // Sync external projectId prop
   useEffect(() => { setSelectedProject(projectId); }, [projectId]);
 
-  const markDone = async (task: Task) => {
-    const newStatus = task.status === 'done' ? 'todo' : 'done';
+  const cycleStatus = async (task: Task) => {
+    const newStatus = NEXT_STATUS[task.status] ?? 'todo';
     const res = await fetch(`/api/tasks/${task.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -166,7 +172,6 @@ export default function MobileTaskList({ projectId }: Props) {
                   const badge = PRIORITY_BADGE[task.priority] ?? PRIORITY_BADGE.moderate;
                   const showToday = task.priority === 'high' && task.due_at !== null && isToday(task.due_at);
                   const badgeText = showToday ? 'Today' : badge.label;
-                  const done = task.status === 'done';
                   const pName = !selectedProject ? projectName(task.project_id) : null;
 
                   return (
@@ -176,20 +181,23 @@ export default function MobileTaskList({ projectId }: Props) {
                         PRIORITY_BORDER[task.priority] ?? PRIORITY_BORDER.moderate
                       } ${i > 0 ? 'border-t border-white/5' : ''}`}
                     >
-                      {/* Check button */}
+                      {/* Status cycle button — tap to advance: todo → in_progress → done → todo */}
                       <button
-                        onClick={() => markDone(task)}
-                        className="shrink-0 text-gray-500 active:scale-90 transition-transform"
+                        onClick={() => cycleStatus(task)}
+                        className="shrink-0 active:scale-90 transition-transform"
+                        title={`Status: ${task.status} — tap to advance`}
                       >
-                        {done
+                        {task.status === 'done'
                           ? <CheckCircle2 size={22} className="text-indigo-400" />
-                          : <Circle size={22} />
+                          : task.status === 'in_progress'
+                            ? <Loader size={22} className="text-orange-400" />
+                            : <Circle size={22} className="text-gray-500" />
                         }
                       </button>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[15px] font-semibold leading-snug ${done ? 'line-through text-gray-500' : 'text-white'}`}>
+                        <p className={`text-[15px] font-semibold leading-snug ${task.status === 'done' ? 'line-through text-gray-500' : 'text-white'}`}>
                           {task.title}
                         </p>
                         {(pName || task.due_at) && (
