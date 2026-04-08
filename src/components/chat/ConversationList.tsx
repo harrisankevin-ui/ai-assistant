@@ -23,9 +23,10 @@ export default function ConversationList({
 
   return (
     <>
-      {/* Mobile toggle button */}
+      {/* Mobile toggle button — positioned below safe area inset */}
       <button
-        className="md:hidden fixed top-3 left-3 z-40 p-2 bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+        className="lg:hidden fixed left-3 z-40 p-2 bg-gray-800/90 backdrop-blur-sm rounded-lg text-gray-400 active:scale-90 transition-all"
+        style={{ top: 'calc(env(safe-area-inset-top) + 10px)' }}
         onClick={() => setOpen(true)}
         aria-label="Open conversations"
       >

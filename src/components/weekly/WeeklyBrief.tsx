@@ -383,7 +383,8 @@ export default function WeeklyBrief() {
           {addingDay !== dayDates[selectedDayIdx].toDateString() && (
             <button
               onClick={() => openQuickAdd(dayDates[selectedDayIdx].toDateString())}
-              className="fixed bottom-28 right-5 w-12 h-12 bg-[#4f46e5] text-white rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] active:scale-90 transition-transform flex items-center justify-center z-30"
+              className="fixed right-5 w-12 h-12 bg-[#4f46e5] text-white rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] active:scale-90 transition-transform flex items-center justify-center z-30"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom) + 68px)' }}
             >
               <Plus className="w-5 h-5" />
             </button>

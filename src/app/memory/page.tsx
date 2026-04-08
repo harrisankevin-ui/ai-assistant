@@ -422,7 +422,8 @@ export default function MemoryPage() {
             {/* Floating new note button */}
             <button
               onClick={createNote}
-              className="fixed bottom-24 right-5 w-14 h-14 bg-[#4f46e5] text-white rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] active:scale-90 transition-transform flex items-center justify-center z-30"
+              className="fixed right-5 w-14 h-14 bg-[#4f46e5] text-white rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] active:scale-90 transition-transform flex items-center justify-center z-30"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom) + 72px)' }}
             >
               <Sparkles className="w-6 h-6" />
             </button>
