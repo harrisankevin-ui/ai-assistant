@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from('tasks')
-    .select('id, title, description, status, priority, position, project_id, due_at, weekly_brief, created_at, updated_at');
+    .select('id, title, description, status, priority, position, project_id, due_at, weekly_brief, archived, completed_at, created_at, updated_at');
 
   if (weeklyBrief === 'true') {
     query = query
@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
       .not('due_at', 'is', null)
       .order('due_at', { ascending: true });
   } else {
+    query = query.eq('archived', false);
     if (status) query = query.eq('status', status);
     if (projectId) query = query.eq('project_id', projectId);
     query = query.order('status').order('position');

@@ -52,6 +52,8 @@ export interface Task {
   project_id: string | null;
   due_at: string | null;
   weekly_brief: boolean;
+  archived: boolean;
+  completed_at: string | null;
   created_at: string;
   updated_at: string;
 }

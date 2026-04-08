@@ -11,7 +11,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     position?: number;
     due_at?: string | null;
     weekly_brief?: boolean;
+    archived?: boolean;
+    completed_at?: string | null;
   };
+
+  // Auto-set completed_at when marking done, clear it when moving back
+  if (body.status === 'done') {
+    body.completed_at = new Date().toISOString();
+  } else if (body.status !== undefined && body.status !== 'done') {
+    body.completed_at = null;
+  }
 
   const { data, error } = await supabase
     .from('tasks')
