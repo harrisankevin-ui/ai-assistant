@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
             } catch (err: unknown) {
               lastErr = err;
               const status = (err as { status?: number })?.status;
-              if (status === 429) continue; // try next model
+              if (status === 429 || status === 404 || status === 503) continue; // try next model
               throw err;
             }
           }
