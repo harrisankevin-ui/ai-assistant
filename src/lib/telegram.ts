@@ -1,6 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api';
 import type OpenAI from 'openai';
-import { openrouter, MODEL, FALLBACK_MODEL } from './openrouter';
+import { openrouter, MODELS } from './openrouter';
 import { buildSystemPrompt } from './anthropic';
 import { supabase } from './supabase';
 import { TOOL_DEFINITIONS, executeTool } from './tools';
@@ -69,30 +69,27 @@ export async function runMaxLoop(userText: string, chatId: number): Promise<stri
   let continueLoop = true;
 
   while (continueLoop) {
-    let response: OpenAI.Chat.ChatCompletion;
-    try {
-      response = await openrouter.chat.completions.create({
-        model: MODEL,
-        max_tokens: 1024,
-        messages,
-        tools: TOOL_DEFINITIONS,
-        tool_choice: 'auto',
-      });
-    } catch (err: unknown) {
-      // If primary model is rate-limited, retry once with the fallback model
-      const status = (err as { status?: number })?.status;
-      if (status === 429) {
+    // Walk the fallback chain until a model responds (handles rate limits on free tier)
+    let response: OpenAI.Chat.ChatCompletion | null = null;
+    let lastErr: unknown;
+    for (const model of MODELS) {
+      try {
         response = await openrouter.chat.completions.create({
-          model: FALLBACK_MODEL,
+          model,
           max_tokens: 1024,
           messages,
           tools: TOOL_DEFINITIONS,
           tool_choice: 'auto',
         });
-      } else {
-        throw err;
+        break;
+      } catch (err: unknown) {
+        lastErr = err;
+        const status = (err as { status?: number })?.status;
+        if (status === 429) continue; // try next model
+        throw err; // non-429 errors are real failures
       }
     }
+    if (!response) throw lastErr;
 
     const choice = response.choices[0];
     const assistantMessage = choice.message;

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import type OpenAI from 'openai';
 import type { Stream } from 'openai/streaming';
-import { openrouter, MODEL, FALLBACK_MODEL } from '@/lib/openrouter';
+import { openrouter, MODELS } from '@/lib/openrouter';
 import { buildSystemPrompt } from '@/lib/anthropic';
 import { supabase } from '@/lib/supabase';
 import { TOOL_DEFINITIONS, executeTool } from '@/lib/tools';
@@ -55,32 +55,28 @@ export async function POST(req: NextRequest) {
         let continueLoop = true;
 
         while (continueLoop) {
-          let openrouterStream: Stream<OpenAI.Chat.ChatCompletionChunk>;
-          try {
-            openrouterStream = await openrouter.chat.completions.create({
-              model: MODEL,
-              max_tokens: 4096,
-              stream: true,
-              messages,
-              tools: TOOL_DEFINITIONS,
-              tool_choice: 'auto',
-            });
-          } catch (err: unknown) {
-            // If primary model is rate-limited, retry with fallback
-            const status = (err as { status?: number })?.status;
-            if (status === 429) {
+          // Walk the fallback chain until a model responds (handles rate limits on free tier)
+          let openrouterStream: Stream<OpenAI.Chat.ChatCompletionChunk> | null = null;
+          let lastErr: unknown;
+          for (const model of MODELS) {
+            try {
               openrouterStream = await openrouter.chat.completions.create({
-                model: FALLBACK_MODEL,
+                model,
                 max_tokens: 4096,
                 stream: true,
                 messages,
                 tools: TOOL_DEFINITIONS,
                 tool_choice: 'auto',
               });
-            } else {
+              break;
+            } catch (err: unknown) {
+              lastErr = err;
+              const status = (err as { status?: number })?.status;
+              if (status === 429) continue; // try next model
               throw err;
             }
           }
+          if (!openrouterStream) throw lastErr;
 
           let finishReason: string | null = null;
           const toolCallsAcc: Record<number, { id: string; name: string; arguments: string }> = {};

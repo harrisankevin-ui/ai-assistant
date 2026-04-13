@@ -9,6 +9,11 @@ export const openrouter = new OpenAI({
   },
 });
 
-export const MODEL = 'qwen/qwen3-next-80b-a3b-instruct:free';
-// Fallback: used automatically by OpenRouter if the primary model is unavailable or rate-limited
-export const FALLBACK_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+// Fallback chain — tried in order if the previous model is rate-limited
+export const MODELS = [
+  'qwen/qwen3-next-80b-a3b-instruct:free',        // primary
+  'meta-llama/llama-3.3-70b-instruct:free',        // fallback 1
+  'mistralai/mistral-small-3.1-24b-instruct:free', // fallback 2
+  'google/gemma-3-27b-it:free',                    // fallback 3
+];
+export const MODEL = MODELS[0];
