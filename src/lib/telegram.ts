@@ -1,6 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
-import type Anthropic from '@anthropic-ai/sdk';
-import { anthropic, MODEL, buildSystemPrompt } from './anthropic';
+import type OpenAI from 'openai';
+import { openrouter, MODEL, FALLBACK_MODEL } from './openrouter';
+import { buildSystemPrompt } from './anthropic';
 import { supabase } from './supabase';
 import { TOOL_DEFINITIONS, executeTool } from './tools';
 
@@ -33,7 +34,7 @@ async function getOrCreateTelegramConversation(chatId: number): Promise<string> 
   return newConv.id;
 }
 
-async function loadHistory(conversationId: string): Promise<Anthropic.MessageParam[]> {
+async function loadHistory(conversationId: string): Promise<OpenAI.Chat.ChatCompletionMessageParam[]> {
   const { data } = await supabase
     .from('messages')
     .select('role, content')
@@ -58,34 +59,53 @@ export async function runMaxLoop(userText: string, chatId: number): Promise<stri
   const history = await loadHistory(conversationId);
   const systemPrompt = await buildSystemPrompt();
 
-  const messages: Anthropic.MessageParam[] = history;
+  const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+    { role: 'system', content: systemPrompt },
+    ...history,
+    { role: 'user', content: userText },
+  ];
+
   let fullText = '';
   let continueLoop = true;
 
   while (continueLoop) {
-    const response = await anthropic.messages.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await (openrouter.chat.completions.create as any)({
       model: MODEL,
       max_tokens: 1024,
-      system: systemPrompt,
-      tools: TOOL_DEFINITIONS,
       messages,
-    });
+      tools: TOOL_DEFINITIONS,
+      tool_choice: 'auto',
+      // OpenRouter-specific: try primary first, fall back to Llama 3.3 70B if unavailable
+      models: [MODEL, FALLBACK_MODEL],
+    }) as OpenAI.Chat.ChatCompletion;
 
-    for (const block of response.content) {
-      if (block.type === 'text') fullText += block.text;
+    const choice = response.choices[0];
+    const assistantMessage = choice.message;
+
+    if (assistantMessage.content) {
+      fullText += assistantMessage.content;
     }
 
-    if (response.stop_reason === 'tool_use') {
-      messages.push({ role: 'assistant', content: response.content });
+    if (choice.finish_reason === 'tool_calls' && assistantMessage.tool_calls?.length) {
+      // Append assistant turn with tool_calls
+      messages.push({
+        role: 'assistant',
+        content: assistantMessage.content ?? null,
+        tool_calls: assistantMessage.tool_calls,
+      });
 
-      const toolResults: Anthropic.ToolResultBlockParam[] = [];
-      for (const block of response.content) {
-        if (block.type === 'tool_use') {
-          const result = await executeTool(block.name, block.input as Record<string, unknown>);
-          toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: result });
-        }
+      // Execute each tool and append results
+      for (const tc of assistantMessage.tool_calls) {
+        if (tc.type !== 'function') continue;
+        const args = JSON.parse(tc.function.arguments) as Record<string, unknown>;
+        const result = await executeTool(tc.function.name, args);
+        messages.push({
+          role: 'tool',
+          tool_call_id: tc.id,
+          content: result,
+        });
       }
-      messages.push({ role: 'user', content: toolResults });
     } else {
       continueLoop = false;
     }

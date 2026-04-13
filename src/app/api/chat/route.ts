@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import type Anthropic from '@anthropic-ai/sdk';
-import { anthropic, MODEL, buildSystemPrompt } from '@/lib/anthropic';
+import { NextRequest } from 'next/server';
+import type OpenAI from 'openai';
+import type { Stream } from 'openai/streaming';
+import { openrouter, MODEL, FALLBACK_MODEL } from '@/lib/openrouter';
+import { buildSystemPrompt } from '@/lib/anthropic';
 import { supabase } from '@/lib/supabase';
 import { TOOL_DEFINITIONS, executeTool } from '@/lib/tools';
 
@@ -14,7 +16,7 @@ export async function POST(req: NextRequest) {
   };
 
   if (!conversationId || !message) {
-    return NextResponse.json({ error: 'Missing conversationId or message' }, { status: 400 });
+    return new Response(JSON.stringify({ error: 'Missing conversationId or message' }), { status: 400 });
   }
 
   // Load history
@@ -31,16 +33,17 @@ export async function POST(req: NextRequest) {
     content: message,
   });
 
-  // Build messages array for Claude
-  const messages: Anthropic.MessageParam[] = [
+  const systemPrompt = await buildSystemPrompt();
+
+  // Build messages array — system first, then history, then current user message
+  const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+    { role: 'system', content: systemPrompt },
     ...(history || []).map((m) => ({
       role: m.role as 'user' | 'assistant',
       content: m.content,
     })),
     { role: 'user', content: message },
   ];
-
-  const systemPrompt = await buildSystemPrompt();
 
   // SSE stream
   const encoder = new TextEncoder();
@@ -52,65 +55,73 @@ export async function POST(req: NextRequest) {
         let continueLoop = true;
 
         while (continueLoop) {
-          const claudeStream = anthropic.messages.stream({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const openrouterStream = await (openrouter.chat.completions.create as any)({
             model: MODEL,
             max_tokens: 4096,
-            system: systemPrompt,
-            tools: TOOL_DEFINITIONS,
+            stream: true,
             messages,
-          });
+            tools: TOOL_DEFINITIONS,
+            tool_choice: 'auto',
+            // OpenRouter-specific: try primary first, fall back to Llama 3.3 70B if unavailable
+            models: [MODEL, FALLBACK_MODEL],
+          }) as Stream<OpenAI.Chat.ChatCompletionChunk>;
 
-          // Collect tool use blocks for this iteration
-          const toolUseBlocks: Anthropic.ToolUseBlock[] = [];
+          let finishReason: string | null = null;
+          const toolCallsAcc: Record<number, { id: string; name: string; arguments: string }> = {};
           let iterationText = '';
 
-          for await (const event of claudeStream) {
-            if (event.type === 'content_block_delta') {
-              if (event.delta.type === 'text_delta') {
-                const token = event.delta.text;
-                iterationText += token;
-                fullAssistantText += token;
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', text: token })}\n\n`));
+          for await (const chunk of openrouterStream) {
+            const delta = chunk.choices[0]?.delta;
+            const reason = chunk.choices[0]?.finish_reason;
+            if (reason) finishReason = reason;
+
+            if (delta?.content) {
+              iterationText += delta.content;
+              fullAssistantText += delta.content;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', text: delta.content })}\n\n`));
+            }
+
+            if (delta?.tool_calls) {
+              for (const tc of delta.tool_calls) {
+                if (!toolCallsAcc[tc.index]) {
+                  toolCallsAcc[tc.index] = { id: '', name: '', arguments: '' };
+                }
+                if (tc.id) toolCallsAcc[tc.index].id = tc.id;
+                if (tc.function?.name) toolCallsAcc[tc.index].name = tc.function.name;
+                if (tc.function?.arguments) toolCallsAcc[tc.index].arguments += tc.function.arguments;
               }
             }
           }
 
-          const finalMsg = await claudeStream.finalMessage();
+          if (finishReason === 'tool_calls') {
+            const toolCalls = Object.values(toolCallsAcc);
 
-          // Collect tool_use blocks
-          for (const block of finalMsg.content) {
-            if (block.type === 'tool_use') {
-              toolUseBlocks.push(block);
-            }
-          }
+            // Append assistant message with tool_calls
+            messages.push({
+              role: 'assistant',
+              content: iterationText || null,
+              tool_calls: toolCalls.map((tc) => ({
+                id: tc.id,
+                type: 'function' as const,
+                function: { name: tc.name, arguments: tc.arguments },
+              })),
+            });
 
-          if (finalMsg.stop_reason === 'tool_use' && toolUseBlocks.length > 0) {
-            // Append assistant turn
-            messages.push({ role: 'assistant', content: finalMsg.content });
-
-            // Execute tools
-            const toolResults: Anthropic.ToolResultBlockParam[] = [];
-            for (const toolBlock of toolUseBlocks) {
+            // Execute each tool and append results
+            for (const tc of toolCalls) {
               controller.enqueue(
-                encoder.encode(
-                  `data: ${JSON.stringify({ type: 'tool_call', tool: toolBlock.name })}\n\n`
-                )
+                encoder.encode(`data: ${JSON.stringify({ type: 'tool_call', tool: tc.name })}\n\n`)
               );
-              const result = await executeTool(toolBlock.name, toolBlock.input as Record<string, unknown>);
-              toolResults.push({
-                type: 'tool_result',
-                tool_use_id: toolBlock.id,
+              const result = await executeTool(tc.name, JSON.parse(tc.arguments) as Record<string, unknown>);
+              messages.push({
+                role: 'tool',
+                tool_call_id: tc.id,
                 content: result,
               });
             }
-
-            // Append tool results
-            messages.push({ role: 'user', content: toolResults });
           } else {
             continueLoop = false;
-            if (iterationText) {
-              // text was already streamed
-            }
           }
         }
 
@@ -130,7 +141,6 @@ export async function POST(req: NextRequest) {
             .single();
 
           if (conv?.title === 'New Conversation') {
-            // generate a short title from the first user message
             const shortTitle = message.slice(0, 50).trim();
             await supabase
               .from('conversations')
