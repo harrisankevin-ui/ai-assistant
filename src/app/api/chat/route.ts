@@ -55,17 +55,32 @@ export async function POST(req: NextRequest) {
         let continueLoop = true;
 
         while (continueLoop) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const openrouterStream = await (openrouter.chat.completions.create as any)({
-            model: MODEL,
-            max_tokens: 4096,
-            stream: true,
-            messages,
-            tools: TOOL_DEFINITIONS,
-            tool_choice: 'auto',
-            // OpenRouter-specific: try primary first, fall back to Llama 3.3 70B if unavailable
-            models: [MODEL, FALLBACK_MODEL],
-          }) as Stream<OpenAI.Chat.ChatCompletionChunk>;
+          let openrouterStream: Stream<OpenAI.Chat.ChatCompletionChunk>;
+          try {
+            openrouterStream = await openrouter.chat.completions.create({
+              model: MODEL,
+              max_tokens: 4096,
+              stream: true,
+              messages,
+              tools: TOOL_DEFINITIONS,
+              tool_choice: 'auto',
+            });
+          } catch (err: unknown) {
+            // If primary model is rate-limited, retry with fallback
+            const status = (err as { status?: number })?.status;
+            if (status === 429) {
+              openrouterStream = await openrouter.chat.completions.create({
+                model: FALLBACK_MODEL,
+                max_tokens: 4096,
+                stream: true,
+                messages,
+                tools: TOOL_DEFINITIONS,
+                tool_choice: 'auto',
+              });
+            } else {
+              throw err;
+            }
+          }
 
           let finishReason: string | null = null;
           const toolCallsAcc: Record<number, { id: string; name: string; arguments: string }> = {};

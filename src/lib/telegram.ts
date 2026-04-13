@@ -69,16 +69,30 @@ export async function runMaxLoop(userText: string, chatId: number): Promise<stri
   let continueLoop = true;
 
   while (continueLoop) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await (openrouter.chat.completions.create as any)({
-      model: MODEL,
-      max_tokens: 1024,
-      messages,
-      tools: TOOL_DEFINITIONS,
-      tool_choice: 'auto',
-      // OpenRouter-specific: try primary first, fall back to Llama 3.3 70B if unavailable
-      models: [MODEL, FALLBACK_MODEL],
-    }) as OpenAI.Chat.ChatCompletion;
+    let response: OpenAI.Chat.ChatCompletion;
+    try {
+      response = await openrouter.chat.completions.create({
+        model: MODEL,
+        max_tokens: 1024,
+        messages,
+        tools: TOOL_DEFINITIONS,
+        tool_choice: 'auto',
+      });
+    } catch (err: unknown) {
+      // If primary model is rate-limited, retry once with the fallback model
+      const status = (err as { status?: number })?.status;
+      if (status === 429) {
+        response = await openrouter.chat.completions.create({
+          model: FALLBACK_MODEL,
+          max_tokens: 1024,
+          messages,
+          tools: TOOL_DEFINITIONS,
+          tool_choice: 'auto',
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const choice = response.choices[0];
     const assistantMessage = choice.message;
