@@ -1,8 +1,6 @@
-import { NextRequest } from 'next/server';
-import type OpenAI from 'openai';
-import type { Stream } from 'openai/streaming';
-import { openrouter, MODELS } from '@/lib/openrouter';
-import { buildSystemPrompt } from '@/lib/anthropic';
+import { NextRequest, NextResponse } from 'next/server';
+import type Anthropic from '@anthropic-ai/sdk';
+import { anthropic, MODEL, buildSystemPrompt } from '@/lib/anthropic';
 import { supabase } from '@/lib/supabase';
 import { TOOL_DEFINITIONS, executeTool } from '@/lib/tools';
 
@@ -16,7 +14,7 @@ export async function POST(req: NextRequest) {
   };
 
   if (!conversationId || !message) {
-    return new Response(JSON.stringify({ error: 'Missing conversationId or message' }), { status: 400 });
+    return NextResponse.json({ error: 'Missing conversationId or message' }, { status: 400 });
   }
 
   // Load history
@@ -33,17 +31,16 @@ export async function POST(req: NextRequest) {
     content: message,
   });
 
-  const systemPrompt = await buildSystemPrompt();
-
-  // Build messages array — system first, then history, then current user message
-  const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: 'system', content: systemPrompt },
+  // Build messages array for Claude
+  const messages: Anthropic.MessageParam[] = [
     ...(history || []).map((m) => ({
       role: m.role as 'user' | 'assistant',
       content: m.content,
     })),
     { role: 'user', content: message },
   ];
+
+  const systemPrompt = await buildSystemPrompt();
 
   // SSE stream
   const encoder = new TextEncoder();
@@ -55,82 +52,60 @@ export async function POST(req: NextRequest) {
         let continueLoop = true;
 
         while (continueLoop) {
-          // Walk the fallback chain until a model responds (handles rate limits on free tier)
-          let openrouterStream: Stream<OpenAI.Chat.ChatCompletionChunk> | null = null;
-          let lastErr: unknown;
-          for (const model of MODELS) {
-            try {
-              openrouterStream = await openrouter.chat.completions.create({
-                model,
-                max_tokens: 4096,
-                stream: true,
-                messages,
-                tools: TOOL_DEFINITIONS,
-                tool_choice: 'auto',
-              });
-              break;
-            } catch (err: unknown) {
-              lastErr = err;
-              const status = (err as { status?: number })?.status;
-              if (status === 429 || status === 404 || status === 503) continue; // try next model
-              throw err;
-            }
-          }
-          if (!openrouterStream) throw lastErr;
+          const claudeStream = anthropic.messages.stream({
+            model: MODEL,
+            max_tokens: 4096,
+            system: systemPrompt,
+            tools: TOOL_DEFINITIONS,
+            messages,
+          });
 
-          let finishReason: string | null = null;
-          const toolCallsAcc: Record<number, { id: string; name: string; arguments: string }> = {};
+          // Collect tool use blocks for this iteration
+          const toolUseBlocks: Anthropic.ToolUseBlock[] = [];
           let iterationText = '';
 
-          for await (const chunk of openrouterStream) {
-            const delta = chunk.choices[0]?.delta;
-            const reason = chunk.choices[0]?.finish_reason;
-            if (reason) finishReason = reason;
-
-            if (delta?.content) {
-              iterationText += delta.content;
-              fullAssistantText += delta.content;
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', text: delta.content })}\n\n`));
-            }
-
-            if (delta?.tool_calls) {
-              for (const tc of delta.tool_calls) {
-                if (!toolCallsAcc[tc.index]) {
-                  toolCallsAcc[tc.index] = { id: '', name: '', arguments: '' };
-                }
-                if (tc.id) toolCallsAcc[tc.index].id = tc.id;
-                if (tc.function?.name) toolCallsAcc[tc.index].name = tc.function.name;
-                if (tc.function?.arguments) toolCallsAcc[tc.index].arguments += tc.function.arguments;
+          for await (const event of claudeStream) {
+            if (event.type === 'content_block_delta') {
+              if (event.delta.type === 'text_delta') {
+                const token = event.delta.text;
+                iterationText += token;
+                fullAssistantText += token;
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', text: token })}\n\n`));
               }
             }
           }
 
-          if (finishReason === 'tool_calls') {
-            const toolCalls = Object.values(toolCallsAcc);
+          const finalMsg = await claudeStream.finalMessage();
 
-            // Append assistant message with tool_calls
-            messages.push({
-              role: 'assistant',
-              content: iterationText || null,
-              tool_calls: toolCalls.map((tc) => ({
-                id: tc.id,
-                type: 'function' as const,
-                function: { name: tc.name, arguments: tc.arguments },
-              })),
-            });
+          // Collect tool_use blocks
+          for (const block of finalMsg.content) {
+            if (block.type === 'tool_use') {
+              toolUseBlocks.push(block);
+            }
+          }
 
-            // Execute each tool and append results
-            for (const tc of toolCalls) {
+          if (finalMsg.stop_reason === 'tool_use' && toolUseBlocks.length > 0) {
+            // Append assistant turn
+            messages.push({ role: 'assistant', content: finalMsg.content });
+
+            // Execute tools
+            const toolResults: Anthropic.ToolResultBlockParam[] = [];
+            for (const toolBlock of toolUseBlocks) {
               controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ type: 'tool_call', tool: tc.name })}\n\n`)
+                encoder.encode(
+                  `data: ${JSON.stringify({ type: 'tool_call', tool: toolBlock.name })}\n\n`
+                )
               );
-              const result = await executeTool(tc.name, JSON.parse(tc.arguments) as Record<string, unknown>);
-              messages.push({
-                role: 'tool',
-                tool_call_id: tc.id,
+              const result = await executeTool(toolBlock.name, toolBlock.input as Record<string, unknown>);
+              toolResults.push({
+                type: 'tool_result',
+                tool_use_id: toolBlock.id,
                 content: result,
               });
             }
+
+            // Append tool results
+            messages.push({ role: 'user', content: toolResults });
           } else {
             continueLoop = false;
           }

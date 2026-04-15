@@ -1,7 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api';
-import type OpenAI from 'openai';
-import { openrouter, MODELS } from './openrouter';
-import { buildSystemPrompt } from './anthropic';
+import type Anthropic from '@anthropic-ai/sdk';
+import { anthropic, MODEL, buildSystemPrompt } from './anthropic';
 import { supabase } from './supabase';
 import { TOOL_DEFINITIONS, executeTool } from './tools';
 
@@ -34,7 +33,7 @@ async function getOrCreateTelegramConversation(chatId: number): Promise<string> 
   return newConv.id;
 }
 
-async function loadHistory(conversationId: string): Promise<OpenAI.Chat.ChatCompletionMessageParam[]> {
+async function loadHistory(conversationId: string): Promise<Anthropic.MessageParam[]> {
   const { data } = await supabase
     .from('messages')
     .select('role, content')
@@ -59,64 +58,34 @@ export async function runMaxLoop(userText: string, chatId: number): Promise<stri
   const history = await loadHistory(conversationId);
   const systemPrompt = await buildSystemPrompt();
 
-  const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: 'system', content: systemPrompt },
-    ...history,
-    { role: 'user', content: userText },
-  ];
-
+  const messages: Anthropic.MessageParam[] = history;
   let fullText = '';
   let continueLoop = true;
 
   while (continueLoop) {
-    // Walk the fallback chain until a model responds (handles rate limits on free tier)
-    let response: OpenAI.Chat.ChatCompletion | null = null;
-    let lastErr: unknown;
-    for (const model of MODELS) {
-      try {
-        response = await openrouter.chat.completions.create({
-          model,
-          max_tokens: 1024,
-          messages,
-          tools: TOOL_DEFINITIONS,
-          tool_choice: 'auto',
-        });
-        break;
-      } catch (err: unknown) {
-        lastErr = err;
-        const status = (err as { status?: number })?.status;
-        if (status === 429 || status === 404 || status === 503) continue; // try next model
-        throw err; // non-429 errors are real failures
-      }
-    }
-    if (!response) throw lastErr;
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 1024,
+      system: systemPrompt,
+      tools: TOOL_DEFINITIONS,
+      messages,
+    });
 
-    const choice = response.choices[0];
-    const assistantMessage = choice.message;
-
-    if (assistantMessage.content) {
-      fullText += assistantMessage.content;
+    for (const block of response.content) {
+      if (block.type === 'text') fullText += block.text;
     }
 
-    if (choice.finish_reason === 'tool_calls' && assistantMessage.tool_calls?.length) {
-      // Append assistant turn with tool_calls
-      messages.push({
-        role: 'assistant',
-        content: assistantMessage.content ?? null,
-        tool_calls: assistantMessage.tool_calls,
-      });
+    if (response.stop_reason === 'tool_use') {
+      messages.push({ role: 'assistant', content: response.content });
 
-      // Execute each tool and append results
-      for (const tc of assistantMessage.tool_calls) {
-        if (tc.type !== 'function') continue;
-        const args = JSON.parse(tc.function.arguments) as Record<string, unknown>;
-        const result = await executeTool(tc.function.name, args);
-        messages.push({
-          role: 'tool',
-          tool_call_id: tc.id,
-          content: result,
-        });
+      const toolResults: Anthropic.ToolResultBlockParam[] = [];
+      for (const block of response.content) {
+        if (block.type === 'tool_use') {
+          const result = await executeTool(block.name, block.input as Record<string, unknown>);
+          toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: result });
+        }
       }
+      messages.push({ role: 'user', content: toolResults });
     } else {
       continueLoop = false;
     }

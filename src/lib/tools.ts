@@ -1,218 +1,188 @@
-import type OpenAI from 'openai';
+import type Anthropic from '@anthropic-ai/sdk';
 import { supabase } from './supabase';
 
-// Tool definitions in OpenAI function-calling format (OpenRouter-compatible)
-export const TOOL_DEFINITIONS: OpenAI.Chat.ChatCompletionTool[] = [
+// Tool definitions for Claude
+export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
   {
-    type: 'function',
-    function: {
-      name: 'list_projects',
-      description: 'List all projects the user has created',
-      parameters: {
-        type: 'object',
-        properties: {},
-        required: [],
-      },
+    name: 'list_projects',
+    description: 'List all projects the user has created',
+    input_schema: {
+      type: 'object',
+      properties: {},
+      required: [],
     },
   },
   {
-    type: 'function',
-    function: {
-      name: 'create_note',
-      description: 'Create a new note with a title, content, and optional tags',
-      parameters: {
-        type: 'object',
-        properties: {
-          title: { type: 'string', description: 'The note title' },
-          content: { type: 'string', description: 'The note content' },
-          tags: {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'Optional array of tags',
-          },
-          project_id: { type: 'string', description: 'Optional project ID to associate this note with' },
+    name: 'create_note',
+    description: 'Create a new note with a title, content, and optional tags',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'The note title' },
+        content: { type: 'string', description: 'The note content' },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Optional array of tags',
         },
-        required: ['title', 'content'],
+        project_id: { type: 'string', description: 'Optional project ID to associate this note with' },
       },
+      required: ['title', 'content'],
     },
   },
   {
-    type: 'function',
-    function: {
-      name: 'list_notes',
-      description: 'List or search notes, optionally filtering by tags or project',
-      parameters: {
-        type: 'object',
-        properties: {
-          query: { type: 'string', description: 'Search query to filter notes by title' },
-          tags: {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'Filter notes by tags',
-          },
-          project_id: { type: 'string', description: 'Filter notes by project ID' },
+    name: 'list_notes',
+    description: 'List or search notes, optionally filtering by tags or project',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query to filter notes by title' },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Filter notes by tags',
         },
-        required: [],
+        project_id: { type: 'string', description: 'Filter notes by project ID' },
       },
+      required: [],
     },
   },
   {
-    type: 'function',
-    function: {
-      name: 'create_document',
-      description: 'Create a new document with a title and content',
-      parameters: {
-        type: 'object',
-        properties: {
-          title: { type: 'string', description: 'The document title' },
-          content: { type: 'string', description: 'The document content' },
-          project_id: { type: 'string', description: 'Optional project ID to associate this document with' },
-        },
-        required: ['title', 'content'],
+    name: 'create_document',
+    description: 'Create a new document with a title and content',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'The document title' },
+        content: { type: 'string', description: 'The document content' },
+        project_id: { type: 'string', description: 'Optional project ID to associate this document with' },
       },
+      required: ['title', 'content'],
     },
   },
   {
-    type: 'function',
-    function: {
-      name: 'search_documents',
-      description: 'Search documents by title or content',
-      parameters: {
-        type: 'object',
-        properties: {
-          query: { type: 'string', description: 'Search query' },
-          project_id: { type: 'string', description: 'Filter by project ID' },
-        },
-        required: ['query'],
+    name: 'search_documents',
+    description: 'Search documents by title or content',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query' },
+        project_id: { type: 'string', description: 'Filter by project ID' },
       },
+      required: ['query'],
     },
   },
   {
-    type: 'function',
-    function: {
-      name: 'create_task',
-      description: 'Create a new task',
-      parameters: {
-        type: 'object',
-        properties: {
-          title: { type: 'string', description: 'The task title' },
-          description: { type: 'string', description: 'Optional task description' },
-          status: {
-            type: 'string',
-            enum: ['todo', 'in_progress', 'done'],
-            description: 'Initial status (defaults to todo)',
-          },
-          priority: {
-            type: 'string',
-            enum: ['low', 'moderate', 'high'],
-            description: 'Task priority — infer from urgency/deadlines. Defaults to moderate.',
-          },
-          due_at: {
-            type: 'string',
-            description: 'ISO 8601 datetime when task is scheduled, with Toronto timezone offset. E.g. "2026-04-11T15:00:00-04:00" for 3pm EDT. Use noon (T12:00:00) if no specific time given. Leave unset if no date mentioned.',
-          },
-          project_id: { type: 'string', description: 'Optional project ID to associate this task with' },
-          weekly_brief: {
-            type: 'boolean',
-            description: 'Whether to show this task in the Weekly Brief calendar. Only set to true after the user explicitly confirms. Default: false.',
-          },
+    name: 'create_task',
+    description: 'Create a new task',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'The task title' },
+        description: { type: 'string', description: 'Optional task description' },
+        status: {
+          type: 'string',
+          enum: ['todo', 'in_progress', 'done'],
+          description: 'Initial status (defaults to todo)',
         },
-        required: ['title'],
+        priority: {
+          type: 'string',
+          enum: ['low', 'moderate', 'high'],
+          description: 'Task priority — infer from urgency/deadlines. Defaults to moderate.',
+        },
+        due_at: {
+          type: 'string',
+          description: 'ISO 8601 datetime when task is scheduled, with Toronto timezone offset. E.g. "2026-04-11T15:00:00-04:00" for 3pm EDT. Use noon (T12:00:00) if no specific time given. Leave unset if no date mentioned.',
+        },
+        project_id: { type: 'string', description: 'Optional project ID to associate this task with' },
+        weekly_brief: {
+          type: 'boolean',
+          description: 'Whether to show this task in the Weekly Brief calendar. Only set to true after the user explicitly confirms. Default: false.',
+        },
       },
+      required: ['title'],
     },
   },
   {
-    type: 'function',
-    function: {
-      name: 'update_task',
-      description: 'Update an existing task',
-      parameters: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', description: 'The task ID' },
-          title: { type: 'string', description: 'New title' },
-          description: { type: 'string', description: 'New description' },
-          status: {
-            type: 'string',
-            enum: ['todo', 'in_progress', 'done'],
-            description: 'New status',
-          },
-          priority: {
-            type: 'string',
-            enum: ['low', 'moderate', 'high'],
-            description: 'New priority',
-          },
-          due_at: {
-            type: 'string',
-            description: 'New scheduled datetime in ISO 8601 with Toronto timezone offset.',
-          },
-          weekly_brief: {
-            type: 'boolean',
-            description: 'Set to true to add this task to the Weekly Brief calendar view.',
-          },
+    name: 'update_task',
+    description: 'Update an existing task',
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'The task ID' },
+        title: { type: 'string', description: 'New title' },
+        description: { type: 'string', description: 'New description' },
+        status: {
+          type: 'string',
+          enum: ['todo', 'in_progress', 'done'],
+          description: 'New status',
         },
-        required: ['id'],
+        priority: {
+          type: 'string',
+          enum: ['low', 'moderate', 'high'],
+          description: 'New priority',
+        },
+        due_at: {
+          type: 'string',
+          description: 'New scheduled datetime in ISO 8601 with Toronto timezone offset.',
+        },
+        weekly_brief: {
+          type: 'boolean',
+          description: 'Set to true to add this task to the Weekly Brief calendar view.',
+        },
       },
+      required: ['id'],
     },
   },
   {
-    type: 'function',
-    function: {
-      name: 'list_tasks',
-      description: 'List tasks, optionally filtered by status, priority, project, or date range. Use date_from/date_to to get tasks scheduled for a specific day or week.',
-      parameters: {
-        type: 'object',
-        properties: {
-          status: {
-            type: 'string',
-            enum: ['todo', 'in_progress', 'done'],
-            description: 'Filter by status',
-          },
-          priority: {
-            type: 'string',
-            enum: ['low', 'moderate', 'high'],
-            description: 'Filter by priority',
-          },
-          project_id: { type: 'string', description: 'Filter by project ID' },
-          date_from: { type: 'string', description: 'Filter tasks with due_at on or after this date. Use YYYY-MM-DD format.' },
-          date_to: { type: 'string', description: 'Filter tasks with due_at on or before this date. Use YYYY-MM-DD format.' },
+    name: 'list_tasks',
+    description: 'List tasks, optionally filtered by status, priority, project, or date range. Use date_from/date_to to get tasks scheduled for a specific day or week.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['todo', 'in_progress', 'done'],
+          description: 'Filter by status',
         },
-        required: [],
+        priority: {
+          type: 'string',
+          enum: ['low', 'moderate', 'high'],
+          description: 'Filter by priority',
+        },
+        project_id: { type: 'string', description: 'Filter by project ID' },
+        date_from: { type: 'string', description: 'Filter tasks with due_at on or after this date. Use YYYY-MM-DD format. E.g. "2026-04-07" for tasks due on or after April 7.' },
+        date_to:   { type: 'string', description: 'Filter tasks with due_at on or before this date. Use YYYY-MM-DD format. E.g. "2026-04-13" for tasks due on or before April 13.' },
       },
+      required: [],
     },
   },
   {
-    type: 'function',
-    function: {
-      name: 'save_memory',
-      description: "Save a fact about Harrisan for future reference. Use this when you learn his name, preferences, timezone, project context, or anything worth remembering across conversations. Using an existing key overwrites the previous value.",
-      parameters: {
-        type: 'object',
-        properties: {
-          key: { type: 'string', description: 'Unique snake_case identifier, e.g. "user_name", "timezone", "prefers_bullet_lists"' },
-          value: { type: 'string', description: 'The fact or preference to remember' },
-          category: {
-            type: 'string',
-            enum: ['user_fact', 'preference', 'context'],
-            description: 'user_fact = personal info; preference = how Harrisan likes things done; context = project or situational notes',
-          },
+    name: 'save_memory',
+    description: "Save a fact about Harrisan for future reference. Use this when you learn his name, preferences, timezone, project context, or anything worth remembering across conversations. Using an existing key overwrites the previous value.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        key: { type: 'string', description: 'Unique snake_case identifier, e.g. "user_name", "timezone", "prefers_bullet_lists"' },
+        value: { type: 'string', description: 'The fact or preference to remember' },
+        category: {
+          type: 'string',
+          enum: ['user_fact', 'preference', 'context'],
+          description: 'user_fact = personal info; preference = how Harrisan likes things done; context = project or situational notes',
         },
-        required: ['key', 'value', 'category'],
       },
+      required: ['key', 'value', 'category'],
     },
   },
   {
-    type: 'function',
-    function: {
-      name: 'delete_memory',
-      description: 'Delete a saved memory by its key when it becomes stale or incorrect.',
-      parameters: {
-        type: 'object',
-        properties: {
-          key: { type: 'string', description: 'The key of the memory to delete' },
-        },
-        required: ['key'],
+    name: 'delete_memory',
+    description: 'Delete a saved memory by its key when it becomes stale or incorrect.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        key: { type: 'string', description: 'The key of the memory to delete' },
       },
+      required: ['key'],
     },
   },
 ];

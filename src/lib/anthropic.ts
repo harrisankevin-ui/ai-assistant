@@ -5,7 +5,7 @@ export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY ?? 'placeholder',
 });
 
-export const MODEL = 'claude-opus-4-6';
+export const MODEL = 'claude-haiku-4-5-20251001';
 
 const BASE_SYSTEM_PROMPT = `You are Max, Harrisan's personal AI assistant.
 
