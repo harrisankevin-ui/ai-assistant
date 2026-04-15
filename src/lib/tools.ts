@@ -135,6 +135,17 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'delete_task',
+    description: 'Permanently delete a task by ID. Use when Harrisan explicitly asks to remove or delete a task.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'The task ID to delete' },
+      },
+      required: ['id'],
+    },
+  },
+  {
     name: 'list_tasks',
     description: 'List tasks, optionally filtered by status, priority, project, or date range. Use date_from/date_to to get tasks scheduled for a specific day or week.',
     input_schema: {
@@ -303,6 +314,13 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
           .single();
         if (error) throw error;
         return `Updated task "${data.title}" — ${data.priority} priority, ${data.status}`;
+      }
+
+      case 'delete_task': {
+        const { id } = input as { id: string };
+        const { error } = await supabase.from('tasks').delete().eq('id', id);
+        if (error) throw error;
+        return `Deleted task ${id}`;
       }
 
       case 'list_tasks': {

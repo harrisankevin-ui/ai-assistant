@@ -35,7 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={<div className="hidden lg:flex w-[260px] bg-[#18181b] border-r border-white/[0.08] shrink-0" />}>
           <Sidebar />
         </Suspense>
-        <main className="flex-1 overflow-hidden pb-16 lg:pb-0 pt-[env(safe-area-inset-top)] lg:pt-0">
+        <main className="flex-1 overflow-hidden pb-[calc(4rem_+_env(safe-area-inset-bottom))] lg:pb-0 pt-[env(safe-area-inset-top)] lg:pt-0">
           {children}
         </main>
         <BottomNav />
