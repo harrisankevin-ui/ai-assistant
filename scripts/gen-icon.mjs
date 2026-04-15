@@ -2,48 +2,42 @@ import sharp from 'sharp';
 
 function makeSVG(size) {
   const cx = size / 2;
-  const corner = size * 0.225; // iOS-style rounded corners
+  const corner = size * 0.225; // iOS icon corner radius
 
-  // Ring dimensions
-  const ringR = size * 0.36;     // orbital ring radius
-  const ringStroke = size * 0.014;
-
-  // "M" size
-  const mSize = size * 0.38;
+  const ringR      = size * 0.355;
+  const ringStroke = size * 0.013;
+  const mSize      = size * 0.36;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <defs>
-    <!-- Deep indigo radial background -->
-    <radialGradient id="bg" cx="40%" cy="30%" r="70%">
-      <stop offset="0%"   stop-color="#1e1650"/>
-      <stop offset="60%"  stop-color="#0d0a2e"/>
-      <stop offset="100%" stop-color="#05030f"/>
+    <!-- Background: deep indigo-purple matching app UI -->
+    <radialGradient id="bg" cx="40%" cy="32%" r="75%">
+      <stop offset="0%"   stop-color="#1a1548"/>
+      <stop offset="55%"  stop-color="#0d0a2e"/>
+      <stop offset="100%" stop-color="#06040f"/>
     </radialGradient>
 
-    <!-- Glass highlight at top (white sheen) -->
-    <linearGradient id="glassTop" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.18"/>
-      <stop offset="45%"  stop-color="#ffffff" stop-opacity="0.04"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    <!-- Subtle glass sheen — indigo-tinted, not white-bright -->
+    <linearGradient id="sheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#7c75f5" stop-opacity="0.20"/>
+      <stop offset="40%"  stop-color="#4f46e5" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#4f46e5" stop-opacity="0"/>
     </linearGradient>
 
-    <!-- Ring glow filter -->
-    <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="${(size * 0.018).toFixed(1)}" result="blur"/>
+    <!-- Soft ring glow — one pass only so it doesn't overpower -->
+    <filter id="ringGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="${(size * 0.014).toFixed(1)}" result="blur"/>
       <feMerge>
-        <feMergeNode in="blur"/>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
 
-    <!-- M letter glow -->
-    <filter id="mGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="${(size * 0.022).toFixed(1)}" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+    <!-- M: clean drop shadow only — no bloom -->
+    <filter id="mShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="${(size * 0.006).toFixed(1)}"
+        stdDeviation="${(size * 0.008).toFixed(1)}"
+        flood-color="#4f46e5" flood-opacity="0.7"/>
     </filter>
 
     <!-- Clip to rounded rect -->
@@ -56,56 +50,54 @@ function makeSVG(size) {
   <rect width="${size}" height="${size}" rx="${corner}" ry="${corner}" fill="url(#bg)"/>
 
   <g clip-path="url(#clip)">
-    <!-- Subtle ambient glow blob behind ring -->
-    <ellipse cx="${cx}" cy="${cx}" rx="${ringR * 1.3}" ry="${ringR * 1.3}"
-      fill="#4f46e5" opacity="0.08"/>
+    <!-- Ambient indigo glow behind ring (very subtle) -->
+    <ellipse cx="${cx}" cy="${cx}" rx="${ringR * 1.25}" ry="${ringR * 1.25}"
+      fill="#4f46e5" opacity="0.07"/>
 
-    <!-- Outer orbital ring — indigo with glow -->
+    <!-- Orbital ring — exact app indigo #4f46e5 -->
     <circle cx="${cx}" cy="${cx}" r="${ringR}"
       fill="none"
-      stroke="#6366f1"
+      stroke="#4f46e5"
       stroke-width="${ringStroke}"
-      opacity="0.85"
+      opacity="0.90"
       filter="url(#ringGlow)"/>
 
-    <!-- Four small dots at cardinal points on the ring -->
-    <circle cx="${cx}" cy="${(cx - ringR).toFixed(1)}" r="${(size * 0.018).toFixed(1)}" fill="#818cf8" opacity="0.9"/>
-    <circle cx="${cx}" cy="${(cx + ringR).toFixed(1)}" r="${(size * 0.018).toFixed(1)}" fill="#818cf8" opacity="0.9"/>
-    <circle cx="${(cx - ringR).toFixed(1)}" cy="${cx}" r="${(size * 0.018).toFixed(1)}" fill="#818cf8" opacity="0.9"/>
-    <circle cx="${(cx + ringR).toFixed(1)}" cy="${cx}" r="${(size * 0.018).toFixed(1)}" fill="#818cf8" opacity="0.9"/>
+    <!-- Four accent dots at cardinal points — lighter indigo -->
+    <circle cx="${cx}"               cy="${(cx - ringR).toFixed(1)}" r="${(size * 0.016).toFixed(1)}" fill="#818cf8"/>
+    <circle cx="${cx}"               cy="${(cx + ringR).toFixed(1)}" r="${(size * 0.016).toFixed(1)}" fill="#818cf8"/>
+    <circle cx="${(cx - ringR).toFixed(1)}" cy="${cx}"               r="${(size * 0.016).toFixed(1)}" fill="#818cf8"/>
+    <circle cx="${(cx + ringR).toFixed(1)}" cy="${cx}"               r="${(size * 0.016).toFixed(1)}" fill="#818cf8"/>
 
-    <!-- M lettermark — white with subtle glow -->
+    <!-- M — crisp white, drop shadow only, no bloom -->
     <text
-      x="${cx}" y="${(cx + mSize * 0.13).toFixed(1)}"
+      x="${cx}" y="${(cx + mSize * 0.12).toFixed(1)}"
       text-anchor="middle"
       dominant-baseline="middle"
       font-family="'SF Pro Display', -apple-system, 'Helvetica Neue', Arial, sans-serif"
       font-weight="800"
       font-size="${mSize}"
       fill="#ffffff"
-      filter="url(#mGlow)"
+      filter="url(#mShadow)"
       letter-spacing="-2"
     >M</text>
 
-    <!-- Glass highlight overlay (top sheen) -->
-    <rect width="${size}" height="${size * 0.55}" rx="${corner}" ry="${corner}"
-      fill="url(#glassTop)"/>
+    <!-- Glass sheen overlay (top ~50%) -->
+    <rect width="${size}" height="${size * 0.52}" rx="${corner}" ry="${corner}"
+      fill="url(#sheen)"/>
   </g>
 
-  <!-- Glass rim border -->
+  <!-- Glass rim border — indigo-tinted, very subtle -->
   <rect width="${size}" height="${size}" rx="${corner}" ry="${corner}"
     fill="none"
-    stroke="white"
+    stroke="#6366f1"
     stroke-width="${(size * 0.004).toFixed(1)}"
-    opacity="0.10"/>
+    opacity="0.18"/>
 </svg>`;
 }
 
-// 512×512
 await sharp(Buffer.from(makeSVG(512))).png().toFile('public/icon-512.png');
 console.log('✓ icon-512.png');
 
-// 192×192
 await sharp(Buffer.from(makeSVG(192))).png().toFile('public/icon-192.png');
 console.log('✓ icon-192.png');
 
