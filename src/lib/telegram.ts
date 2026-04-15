@@ -1,8 +1,14 @@
 import TelegramBot from 'node-telegram-bot-api';
 import type Anthropic from '@anthropic-ai/sdk';
+import OpenAI, { toFile } from 'openai';
 import { anthropic, MODEL, buildSystemPrompt } from './anthropic';
 import { supabase } from './supabase';
 import { TOOL_DEFINITIONS, executeTool } from './tools';
+
+const groq = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY ?? 'placeholder',
+  baseURL: 'https://api.groq.com/openai/v1',
+});
 
 let bot: TelegramBot | null = null;
 
@@ -98,17 +104,38 @@ export async function runMaxLoop(userText: string, chatId: number): Promise<stri
   return fullText || 'Done.';
 }
 
+async function transcribeVoice(fileId: string): Promise<string> {
+  const b = getTelegramBot();
+  if (!b) throw new Error('No bot available');
+
+  const fileInfo = await b.getFile(fileId);
+  if (!fileInfo.file_path) throw new Error('No file path returned from Telegram');
+
+  const url = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${fileInfo.file_path}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Failed to download voice file: ${resp.status}`);
+
+  const buffer = Buffer.from(await resp.arrayBuffer());
+  const file = await toFile(buffer, 'voice.ogg', { type: 'audio/ogg' });
+
+  const transcription = await groq.audio.transcriptions.create({
+    file,
+    model: 'whisper-large-v3',
+  });
+
+  return transcription.text;
+}
+
 export async function handleTelegramUpdate(update: TelegramBot.Update): Promise<void> {
   const b = getTelegramBot();
   if (!b) return;
 
   const message = update.message;
-  if (!message?.text || !message.chat?.id) return;
+  if (!message?.chat?.id) return;
 
   const chatId = message.chat.id;
-  const text = message.text.trim();
 
-  if (text === '/start') {
+  if (message.text?.trim() === '/start') {
     await b.sendMessage(
       chatId,
       `Hey Harrisan — I'm Max, your personal assistant.\n\nI'm the same Max from your dashboard. Same memory, same tools, same context.\n\nI can create tasks, set reminders, manage your projects, and help you stay organized. Just talk to me naturally.`
@@ -116,9 +143,27 @@ export async function handleTelegramUpdate(update: TelegramBot.Update): Promise<
     return;
   }
 
+  // Resolve text from either a text message or a voice note
+  let userText: string | null = null;
+
+  if (message.text) {
+    userText = message.text.trim();
+  } else if (message.voice) {
+    try {
+      await b.sendChatAction(chatId, 'typing');
+      userText = await transcribeVoice(message.voice.file_id);
+    } catch (err) {
+      console.error('Voice transcription error:', err);
+      await b.sendMessage(chatId, "Couldn't transcribe that. Try again or send as text.");
+      return;
+    }
+  }
+
+  if (!userText) return;
+
   try {
     await b.sendChatAction(chatId, 'typing');
-    const reply = await runMaxLoop(text, chatId);
+    const reply = await runMaxLoop(userText, chatId);
 
     if (reply.length <= 4096) {
       await b.sendMessage(chatId, reply);
