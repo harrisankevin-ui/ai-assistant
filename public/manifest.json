@@ -1,7 +1,7 @@
 {
-  "name": "AI Assistant",
-  "short_name": "AI Assistant",
-  "description": "Personal AI command center powered by Claude",
+  "name": "Max",
+  "short_name": "Max",
+  "description": "Your personal AI assistant",
   "start_url": "/chat",
   "display": "standalone",
   "background_color": "#0a0a0f",

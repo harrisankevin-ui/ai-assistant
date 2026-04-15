@@ -24,7 +24,7 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark bg-[#0a0a0f]">
       <head>
         <meta name="theme-color" content="#0a0a0f" />
         <link rel="manifest" href="/manifest.json" />
