@@ -12,26 +12,56 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Today's date in Toronto timezone (YYYY-MM-DD)
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
 
-  const { data: tasks, error } = await supabase
+  // Query A: schedule items due today (weekly_brief: true)
+  const { data: scheduleItems } = await supabase
     .from('tasks')
-    .select('title, priority, due_at, status')
-    .neq('status', 'done')
+    .select('title, due_at')
+    .eq('weekly_brief', true)
     .gte('due_at', `${today}T00:00:00`)
     .lte('due_at', `${today}T23:59:59`)
-    .order('priority');
+    .order('due_at', { ascending: true });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!tasks || tasks.length === 0) {
-    return NextResponse.json({ sent: false, reason: 'No tasks today' });
+  // Query B: high-priority tasks not yet done
+  const { data: highTasks } = await supabase
+    .from('tasks')
+    .select('title')
+    .eq('priority', 'high')
+    .eq('weekly_brief', false)
+    .neq('status', 'done')
+    .eq('archived', false);
+
+  const hasSchedule = scheduleItems && scheduleItems.length > 0;
+  const hasHigh = highTasks && highTasks.length > 0;
+
+  if (!hasSchedule && !hasHigh) {
+    return NextResponse.json({ sent: false, reason: 'Nothing to report today' });
   }
 
-  // Build message
-  const priorityIcon = (p: string) => p === 'high' ? '↑' : p === 'moderate' ? '→' : '↓';
-  const lines = tasks.map((t) => `${priorityIcon(t.priority)} ${t.title}`).join('\n');
-  const message = `Morning. You've got ${tasks.length} task${tasks.length > 1 ? 's' : ''} today:\n\n${lines}`;
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Toronto' });
+
+  const lines: string[] = ['Morning. Here\'s your day:\n'];
+
+  if (hasSchedule) {
+    lines.push('📅 Schedule:');
+    for (const item of scheduleItems!) {
+      const time = item.due_at ? ` — ${formatTime(item.due_at)}` : '';
+      lines.push(`→ ${item.title}${time}`);
+    }
+  }
+
+  if (hasSchedule && hasHigh) lines.push('');
+
+  if (hasHigh) {
+    lines.push('↑ High priority:');
+    for (const task of highTasks!) {
+      lines.push(`↑ ${task.title}`);
+    }
+  }
+
+  const message = lines.join('\n');
 
   // Send to all known Telegram chat IDs
   const { data: convs } = await supabase
@@ -53,5 +83,5 @@ export async function GET(req: NextRequest) {
     await bot.sendMessage(chatId, message);
   }
 
-  return NextResponse.json({ sent: true, tasks: tasks.length, chatIds: chatIds.length });
+  return NextResponse.json({ sent: true, schedule: scheduleItems?.length ?? 0, highPriority: highTasks?.length ?? 0 });
 }

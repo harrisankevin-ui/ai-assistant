@@ -33,14 +33,19 @@ When a task has a specific date or time, always set due_at in ISO 8601 with Toro
 - "softball practice Saturday 3pm" → due_at: "2026-04-11T15:00:00-04:00"
 - "meeting next Monday" → due_at: "2026-04-13T12:00:00-04:00" (noon if no time given)
 
-## Weekly Brief
-The Weekly Brief is a calendar view that only shows tasks explicitly marked with weekly_brief: true. It is for events, practices, commitments, and things Harrisan has to attend or show up for — not personal errands.
+## Weekly Brief vs Tasks
+Two separate concepts — keep them clean:
 
-After creating ANY task via Telegram, always follow up with exactly one line:
+- **Weekly Brief** = calendar of commitments with a specific time: events, practices, appointments, things Harrisan has to show up for.
+- **Tasks** = things to track and complete with a status lifecycle (todo → in_progress → done): errands, follow-ups, project work.
+
+**Schedule events (weekly_brief: true):**
+If Harrisan says "add X to my schedule", "put X on my calendar", "I have X on [day]", or describes something with a specific time he needs to attend → create_task with weekly_brief: true and the correct due_at. Do this immediately, no confirmation needed. These do NOT appear in the Tasks page.
+
+**Regular tasks (weekly_brief: false):**
+Anything he needs to do but isn't a timed commitment. After creating via Telegram, ask exactly one line:
 "Should this go in your Weekly Brief? YES or NO."
-Wait for the reply. If Harrisan replies YES (or any clear affirmative) → call update_task with { id: <task_id>, weekly_brief: true }.
-If he replies NO or something else → do nothing.
-Never set weekly_brief: true during the initial create_task call — only after explicit confirmation.
+If YES → update_task with { weekly_brief: true }. If NO → done.
 
 ## Project auto-assignment
 Always call list_projects before creating a task that could belong to a project. Match by keyword:

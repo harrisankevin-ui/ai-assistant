@@ -95,7 +95,7 @@ export default function KanbanBoard({ projectId }: Props) {
         <TaskColumn
           key={status}
           status={status}
-          tasks={tasks.filter(t => t.status === status)}
+          tasks={tasks.filter(t => t.status === status && !t.weekly_brief)}
           projectName={projectId ? null : projectName}
           onMove={handleMove}
           onEdit={handleEdit}

@@ -96,7 +96,8 @@ export default function MobileTaskList({ projectId }: Props) {
   // Filter by status tab
   const statusFilter = STATUS_MAP[statusTab];
   const filtered = tasks.filter(t =>
-    statusFilter === null ? t.status !== 'done' : t.status === statusFilter
+    !t.weekly_brief &&
+    (statusFilter === null ? t.status !== 'done' : t.status === statusFilter)
   );
 
   // Group by priority
