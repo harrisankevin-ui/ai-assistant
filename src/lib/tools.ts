@@ -169,6 +169,33 @@ export const TOOL_DEFINITIONS: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'create_reminder',
+    description: 'Set a reminder that fires via Telegram at a specific time. Use when Harrisan asks to be reminded about something.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string', description: 'What to remind Harrisan about' },
+        due_at: {
+          type: 'string',
+          description: 'ISO 8601 datetime when the reminder fires, with Toronto timezone offset. E.g. "2026-04-17T09:00:00-04:00"',
+        },
+        project_id: { type: 'string', description: 'Optional project ID' },
+      },
+      required: ['text', 'due_at'],
+    },
+  },
+  {
+    name: 'web_search',
+    description: 'Search the web for current information — news, prices, scores, facts, anything that requires up-to-date data.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'The search query' },
+      },
+      required: ['query'],
+    },
+  },
+  {
     name: 'save_memory',
     description: "Save a fact about Harrisan for future reference. Use this when you learn his name, preferences, timezone, project context, or anything worth remembering across conversations. Using an existing key overwrites the previous value.",
     input_schema: {
@@ -345,6 +372,45 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
         if (error) throw error;
         if (!data || data.length === 0) return 'No tasks found.';
         return JSON.stringify(data, null, 2);
+      }
+
+      case 'create_reminder': {
+        const { text, due_at, project_id } = input as { text: string; due_at: string; project_id?: string };
+        // Look up Harrisan's Telegram chat ID from his most recent conversation
+        const { data: conv } = await supabase
+          .from('conversations')
+          .select('telegram_chat_id')
+          .not('telegram_chat_id', 'is', null)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+        const { error } = await supabase
+          .from('reminders')
+          .insert({ text, due_at, project_id: project_id ?? null, telegram_chat_id: conv?.telegram_chat_id ?? null, sent: false });
+        if (error) throw error;
+        return `Reminder set: "${text}" at ${due_at}`;
+      }
+
+      case 'web_search': {
+        const { query } = input as { query: string };
+        const resp = await fetch(
+          `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'X-Subscription-Token': process.env.BRAVE_API_KEY ?? '',
+            },
+          }
+        );
+        if (!resp.ok) throw new Error(`Brave Search error: ${resp.status}`);
+        const data = await resp.json() as { web?: { results?: Array<{ title: string; url: string; description: string }> } };
+        const results = (data.web?.results ?? []).slice(0, 5).map((r) => ({
+          title: r.title,
+          url: r.url,
+          description: r.description,
+        }));
+        if (results.length === 0) return 'No results found.';
+        return JSON.stringify(results, null, 2);
       }
 
       case 'save_memory': {
