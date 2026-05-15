@@ -316,7 +316,7 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
         const position = existing && existing.length > 0 ? existing[0].position + 1 : 0;
         const { data, error } = await supabase
           .from('tasks')
-          .insert({ title, description, status, priority, due_at: due_at ?? null, position, project_id: project_id ?? null, weekly_brief })
+          .insert({ title, description, status, priority, due_at: due_at ?? null, position, project_id: project_id ?? null, weekly_brief, archived: false })
           .select()
           .single();
         if (error) throw error;

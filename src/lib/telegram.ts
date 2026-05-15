@@ -21,21 +21,36 @@ export function getTelegramBot(): TelegramBot | null {
 }
 
 async function getOrCreateTelegramConversation(chatId: number): Promise<string> {
-  const { data } = await supabase
+  const { data, error: selectError } = await supabase
     .from('conversations')
     .select('id')
     .eq('telegram_chat_id', chatId)
     .single();
 
+  if (selectError && selectError.code !== 'PGRST116') {
+    console.error('[telegram] conversation lookup error:', selectError);
+  }
+
   if (data) return data.id;
 
-  const { data: newConv, error } = await supabase
+  const { data: newConv, error: insertError } = await supabase
     .from('conversations')
     .insert({ title: 'Telegram', telegram_chat_id: chatId })
     .select('id')
     .single();
 
-  if (error || !newConv) throw new Error('Failed to create Telegram conversation');
+  if (insertError || !newConv) {
+    console.error('[telegram] conversation insert error:', insertError);
+    // Fallback: create without telegram_chat_id so Max can still respond
+    const { data: fallback, error: fallbackError } = await supabase
+      .from('conversations')
+      .insert({ title: 'Telegram' })
+      .select('id')
+      .single();
+    if (fallbackError || !fallback) throw new Error('Failed to create Telegram conversation');
+    return fallback.id;
+  }
+
   return newConv.id;
 }
 

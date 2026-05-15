@@ -72,6 +72,8 @@ export default function MobileTaskList({ projectId }: Props) {
   useEffect(() => {
     loadTasks();
     fetch('/api/projects').then(r => r.ok ? r.json() : []).then(setProjects);
+    const interval = setInterval(loadTasks, 15000);
+    return () => clearInterval(interval);
   }, [loadTasks]);
 
   // Sync external projectId prop
