@@ -1,4 +1,4 @@
-const CACHE = 'max-v3';
+const CACHE = 'max-v4';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
