@@ -319,7 +319,13 @@ export async function executeTool(name: string, input: ToolInput): Promise<strin
           .insert({ title, description, status, priority, due_at: due_at ?? null, position, project_id: project_id ?? null, weekly_brief, archived: false })
           .select()
           .single();
-        if (error) throw error;
+        if (error) {
+          // Surface schema drift explicitly so Max tells Harrisan instead of faking success
+          if (error.message?.includes('column') || error.code === '42703') {
+            return `Error executing create_task: DB schema mismatch — ${error.message}. A column is missing from the tasks table. Run the migration in Supabase SQL editor.`;
+          }
+          throw error;
+        }
         return `Created task "${data.title}" [${data.priority} priority, ${data.status}] with ID ${data.id}`;
       }
 

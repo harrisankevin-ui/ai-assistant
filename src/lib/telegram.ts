@@ -62,10 +62,30 @@ async function loadHistory(conversationId: string): Promise<Anthropic.MessagePar
     .order('created_at', { ascending: false })
     .limit(40);
 
-  return (data ?? []).reverse().map((m) => ({
+  const messages = (data ?? []).reverse().map((m) => ({
     role: m.role as 'user' | 'assistant',
     content: m.content,
   }));
+
+  // Poison guard: if recent assistant messages are all short fake-success variants,
+  // the history has been contaminated. Trim to just the last 4 messages so Claude
+  // starts fresh without the poisoned context dragging it back to bad behaviour.
+  const recentAssistant = messages
+    .filter((m) => m.role === 'assistant')
+    .slice(-8);
+  const poisonPattern = /^(done|created|added|task (created|added|set)|✓|okay|got it|sure)[.,!\s]*$/i;
+  const isPoisoned =
+    recentAssistant.length >= 6 &&
+    recentAssistant.every(
+      (m) => typeof m.content === 'string' && poisonPattern.test(m.content.trim()),
+    );
+
+  if (isPoisoned) {
+    console.warn('[telegram] Poisoned history detected — trimming to last 4 messages');
+    return messages.slice(-4);
+  }
+
+  return messages;
 }
 
 async function saveMessage(conversationId: string, role: 'user' | 'assistant', content: string): Promise<void> {
@@ -155,6 +175,19 @@ export async function handleTelegramUpdate(update: TelegramBot.Update): Promise<
       chatId,
       `Hey Harrisan — I'm Max, your personal assistant.\n\nI'm the same Max from your dashboard. Same memory, same tools, same context.\n\nI can create tasks, set reminders, manage your projects, and help you stay organized. Just talk to me naturally.`
     );
+    return;
+  }
+
+  // /reset — clears conversation history (fixes poisoned history / stuck behaviour)
+  if (message.text?.trim() === '/reset') {
+    try {
+      const convId = await getOrCreateTelegramConversation(chatId);
+      await supabase.from('messages').delete().eq('conversation_id', convId);
+      await b.sendMessage(chatId, 'History cleared. Fresh start — what do you need?');
+    } catch (err) {
+      console.error('[telegram] /reset error:', err);
+      await b.sendMessage(chatId, 'Reset failed. Try again.');
+    }
     return;
   }
 
