@@ -3,7 +3,7 @@ import WeeklyBrief from '@/components/weekly/WeeklyBrief';
 
 export default function WeeklyPage() {
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-[#0a0a0f]">
       <div className="px-6 py-4 border-b border-gray-800 shrink-0">
         <h1 className="text-lg font-semibold text-white">Weekly Brief</h1>
         <p className="text-xs text-gray-500 mt-0.5">Your week at a glance</p>

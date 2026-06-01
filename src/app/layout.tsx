@@ -24,14 +24,14 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark bg-[#0a0a0f]">
+    <html lang="en" className="bg-[#f4f4f5]">
       <head>
-        <meta name="theme-color" content="#0a0a0f" />
+        <meta name="theme-color" content="#f4f4f5" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <script dangerouslySetInnerHTML={{ __html: `if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js?v=4');` }} />
       </head>
-      <body className="bg-[#0a0a0f] text-gray-100 h-[100dvh] flex overflow-hidden">
+      <body className="bg-[#f4f4f5] text-gray-900 h-[100dvh] flex overflow-hidden">
         <Suspense fallback={<div className="hidden lg:flex w-[260px] bg-[#18181b] border-r border-white/[0.08] shrink-0" />}>
           <Sidebar />
         </Suspense>

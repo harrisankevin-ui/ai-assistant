@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(rm -rf .vercel)",
+      "Bash(npx vercel:*)",
+      "Bash(vercel ls *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(vercel deploy *)",
+      "Bash(node --use-system-ca -e ' *)"
+    ]
+  }
+}

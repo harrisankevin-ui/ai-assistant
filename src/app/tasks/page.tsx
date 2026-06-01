@@ -83,7 +83,7 @@ export default function TasksPage() {
   const selectedProject = projects.find(p => p.id === selectedProjectId) ?? null;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-[#0a0a0f]">
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-800">
         <h1 className="text-lg font-semibold text-white">
