@@ -31,46 +31,46 @@ export default function TaskModal({ task, defaultStatus = 'todo', onSave, onClos
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-800 ring-1 ring-white/5 rounded-2xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
-          <h2 className="text-sm font-semibold text-white">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white/90 backdrop-blur-xl border border-gray-200 rounded-2xl w-full max-w-md shadow-[0_8px_40px_rgba(0,0,0,0.12)]">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h2 className="text-sm font-semibold text-gray-900">
             {task?.id ? 'Edit Task' : 'New Task'}
           </h2>
-          <button onClick={onClose} className="p-1 text-gray-500 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700 transition-colors">
             <X size={16} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1">Title *</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Title *</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Task title…"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-400/20 transition-colors"
+              className="w-full bg-white/60 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-colors"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional description…"
               rows={3}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-400/20 transition-colors resize-none"
+              className="w-full bg-white/60 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-colors resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1">Status</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as TaskStatus)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+              className="w-full bg-white/60 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-400 transition-colors"
             >
               <option value="todo">Todo</option>
               <option value="in_progress">In Progress</option>
@@ -82,14 +82,14 @@ export default function TaskModal({ task, defaultStatus = 'todo', onSave, onClos
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
+              className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!title.trim()}
-              className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex-1 px-4 py-2 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-lg text-sm font-medium transition-colors"
             >
               {task?.id ? 'Save' : 'Create'}
             </button>

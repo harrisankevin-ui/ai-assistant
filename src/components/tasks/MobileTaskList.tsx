@@ -114,15 +114,13 @@ export default function MobileTaskList({ projectId }: Props) {
   ].filter(g => g.tasks.length > 0);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden relative">
-      {/* Ambient top glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-[#4f46e5]/10 rounded-full blur-[100px] pointer-events-none z-0" />
+    <div className="flex flex-col h-full overflow-hidden relative bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Project filter pills */}
       <div className="flex gap-2 px-4 pt-3 pb-1 overflow-x-auto shrink-0 scrollbar-none z-10 relative">
         <button
           onClick={() => setSelectedProject(null)}
           className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-            selectedProject === null ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400'
+            selectedProject === null ? 'bg-gray-900 text-white' : 'bg-white/80 border border-gray-200 text-gray-600'
           }`}
         >
           All
@@ -132,10 +130,10 @@ export default function MobileTaskList({ projectId }: Props) {
             key={p.id}
             onClick={() => setSelectedProject(p.id)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              selectedProject === p.id ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400'
+              selectedProject === p.id ? 'bg-gray-900 text-white' : 'bg-white/80 border border-gray-200 text-gray-600'
             }`}
           >
-            <span className={`w-2 h-2 rounded-full shrink-0 ${DOT_CLASSES[p.color] ?? 'bg-indigo-400'}`} />
+            <span className={`w-2 h-2 rounded-full shrink-0 ${DOT_CLASSES[p.color] ?? 'bg-gray-400'}`} />
             {p.name}
           </button>
         ))}
@@ -148,7 +146,7 @@ export default function MobileTaskList({ projectId }: Props) {
             key={tab}
             onClick={() => setStatusTab(tab)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              statusTab === tab ? 'bg-gray-700 text-white' : 'text-gray-500'
+              statusTab === tab ? 'bg-white/80 border border-gray-200 text-gray-900 shadow-sm' : 'text-gray-500'
             }`}
           >
             {tab}
@@ -160,19 +158,19 @@ export default function MobileTaskList({ projectId }: Props) {
       <div className="flex-1 overflow-y-auto px-4 pb-4 z-10 relative">
         {groups.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 gap-2">
-            <CheckCircle2 size={36} className="text-gray-700" />
-            <p className="text-gray-500 text-sm">No tasks</p>
+            <CheckCircle2 size={36} className="text-gray-300" />
+            <p className="text-gray-400 text-sm">No tasks</p>
           </div>
         ) : (
           groups.map(group => (
             <div key={group.label} className="mt-4">
               {/* Section header */}
-              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest px-1 mb-2">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest px-1 mb-2">
                 {group.label}
               </p>
 
               {/* Section card */}
-              <div className="bg-gray-900 rounded-2xl overflow-hidden border border-white/5">
+              <div className="bg-white/80 backdrop-blur rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
                 {group.tasks.map((task, i) => {
                   const badge = PRIORITY_BADGE[task.priority] ?? PRIORITY_BADGE.moderate;
                   const showToday = task.priority === 'high' && task.due_at !== null && isToday(task.due_at);
@@ -184,37 +182,37 @@ export default function MobileTaskList({ projectId }: Props) {
                       key={task.id}
                       className={`flex items-center gap-3 px-4 py-3.5 border-l-4 min-h-[64px] ${
                         PRIORITY_BORDER[task.priority] ?? PRIORITY_BORDER.moderate
-                      } ${i > 0 ? 'border-t border-white/5' : ''}`}
+                      } ${i > 0 ? 'border-t border-gray-100' : ''}`}
                     >
-                      {/* Status cycle button — tap to advance: todo → in_progress → done → todo */}
+                      {/* Status cycle button */}
                       <button
                         onClick={() => cycleStatus(task)}
                         className="shrink-0 active:scale-90 transition-transform"
                         title={`Status: ${task.status} — tap to advance`}
                       >
                         {task.status === 'done'
-                          ? <CheckCircle2 size={22} className="text-indigo-400" />
+                          ? <CheckCircle2 size={22} className="text-gray-400" />
                           : task.status === 'in_progress'
                             ? <Loader size={22} className="text-orange-400" />
-                            : <Circle size={22} className="text-gray-500" />
+                            : <Circle size={22} className="text-gray-300" />
                         }
                       </button>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[15px] font-semibold leading-snug ${task.status === 'done' ? 'line-through text-gray-500' : 'text-white'}`}>
+                        <p className={`text-[15px] font-semibold leading-snug ${task.status === 'done' ? 'line-through text-gray-400' : 'text-gray-900'}`}>
                           {task.title}
                         </p>
                         {(pName || task.due_at) && (
                           <div className="flex items-center gap-2 mt-0.5">
                             {pName && (
-                              <span className="text-xs text-indigo-400 font-medium">{pName}</span>
+                              <span className="text-xs text-gray-500 font-medium">{pName}</span>
                             )}
                             {pName && task.due_at && (
-                              <span className="text-gray-600">·</span>
+                              <span className="text-gray-300">·</span>
                             )}
                             {task.due_at && (
-                              <span className="flex items-center gap-1 text-xs text-gray-500">
+                              <span className="flex items-center gap-1 text-xs text-gray-400">
                                 <Calendar size={10} />
                                 {formatDue(task.due_at)}
                               </span>

@@ -83,10 +83,10 @@ export default function TasksPage() {
   const selectedProject = projects.find(p => p.id === selectedProjectId) ?? null;
 
   return (
-    <div className="h-full flex flex-col bg-[#0a0a0f]">
+    <div className="h-full flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-800">
-        <h1 className="text-lg font-semibold text-white">
+      <div className="px-6 py-4 border-b border-gray-200/60 bg-white/60 backdrop-blur-xl">
+        <h1 className="text-lg font-semibold text-gray-900">
           {selectedProject ? selectedProject.name : 'All Tasks'}
         </h1>
         <p className="text-xs text-gray-500 mt-0.5">
@@ -104,14 +104,14 @@ export default function TasksPage() {
       )}
 
       {/* Desktop: project filter tab bar */}
-      {!isMobile && <div className="flex items-center gap-2 overflow-x-auto px-6 py-3 border-b border-gray-800 shrink-0">
+      {!isMobile && <div className="flex items-center gap-2 overflow-x-auto px-6 py-3 border-b border-gray-200/60 bg-white/40 backdrop-blur shrink-0">
         {/* All Tasks tab */}
         <button
           onClick={() => setSelectedProjectId(null)}
           className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
             selectedProjectId === null
-              ? 'bg-indigo-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:text-white'
+              ? 'bg-gray-900 text-white'
+              : 'bg-white/60 border border-gray-200 text-gray-600 hover:bg-gray-50'
           }`}
         >
           All Tasks
@@ -124,16 +124,16 @@ export default function TasksPage() {
               onClick={() => setSelectedProjectId(p.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors pr-7 ${
                 selectedProjectId === p.id
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-white'
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-white/60 border border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <span className={`w-2 h-2 rounded-full shrink-0 ${DOT_CLASSES[p.color] ?? 'bg-indigo-400'}`} />
+              <span className={`w-2 h-2 rounded-full shrink-0 ${DOT_CLASSES[p.color] ?? 'bg-gray-400'}`} />
               <span>{p.name}</span>
             </button>
             <button
               onClick={(e) => deleteProject(p.id, e)}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-0.5 text-gray-500 hover:text-red-400 transition-all"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-500 transition-all"
             >
               <Trash2 size={11} />
             </button>
@@ -152,26 +152,26 @@ export default function TasksPage() {
                 if (e.key === 'Escape') { setAdding(false); setNewName(''); }
               }}
               placeholder="Project name…"
-              className="bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-500 outline-none focus:border-indigo-500 w-36"
+              className="bg-white/60 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 placeholder-gray-400 outline-none focus:border-gray-400 w-36"
             />
             <div className="flex gap-1">
               {PROJECT_COLORS.map(c => (
                 <button
                   key={c}
                   onClick={() => setNewColor(c)}
-                  className={`w-4 h-4 rounded-full transition-all ${DOT_CLASSES[c] ?? 'bg-indigo-400'} ${newColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900' : ''}`}
+                  className={`w-4 h-4 rounded-full transition-all ${DOT_CLASSES[c] ?? 'bg-gray-400'} ${newColor === c ? 'ring-2 ring-gray-900 ring-offset-1 ring-offset-white' : ''}`}
                 />
               ))}
             </div>
             <button
               onClick={createProject}
-              className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs transition-colors"
+              className="px-2.5 py-1.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-xs transition-colors"
             >
               Add
             </button>
             <button
               onClick={() => { setAdding(false); setNewName(''); }}
-              className="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-xs transition-colors"
+              className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs transition-colors"
             >
               Cancel
             </button>
@@ -179,7 +179,7 @@ export default function TasksPage() {
         ) : (
           <button
             onClick={() => setAdding(true)}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
           >
             <Plus size={13} />
             Add Project

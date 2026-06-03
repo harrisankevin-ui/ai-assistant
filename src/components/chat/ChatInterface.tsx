@@ -151,7 +151,7 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-gradient-to-br from-gray-50 to-gray-100">
       <ConversationList
         conversations={conversations}
         activeId={activeId}
@@ -165,14 +165,14 @@ export default function ChatInterface() {
         {!activeId ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-indigo-600/20">
+              <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-gray-900/20">
                 <span className="text-2xl font-bold text-white">M</span>
               </div>
-              <h2 className="text-xl font-semibold text-white">Hey Harrisan</h2>
-              <p className="text-gray-400 text-sm max-w-xs">What can I help you with today?</p>
+              <h2 className="text-xl font-semibold text-gray-900">Hey Harrisan</h2>
+              <p className="text-gray-500 text-sm max-w-xs">What can I help you with today?</p>
               <button
                 onClick={createConversation}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 New Chat
               </button>
@@ -181,10 +181,10 @@ export default function ChatInterface() {
         ) : (
           <>
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {loading && (
                 <div className="flex justify-center">
-                  <Loader2 size={20} className="animate-spin text-gray-500" />
+                  <Loader2 size={20} className="animate-spin text-gray-400" />
                 </div>
               )}
               {messages.map((msg, i) => (
@@ -192,12 +192,12 @@ export default function ChatInterface() {
               ))}
               {toolCalling && (
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-semibold text-white">M</span>
+                  <div className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center shrink-0">
+                    <span className="text-sm font-semibold text-gray-700">M</span>
                   </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 rounded-2xl rounded-tl-sm">
-                    <Wrench size={11} className="text-indigo-400 animate-pulse" />
-                    <span className="text-xs text-gray-400">{toolCalling.replace(/_/g, ' ')}</span>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/80 backdrop-blur border border-gray-200/60 rounded-2xl rounded-tl-sm shadow-sm">
+                    <Wrench size={11} className="text-gray-500 animate-pulse" />
+                    <span className="text-xs text-gray-500">{toolCalling.replace(/_/g, ' ')}</span>
                   </div>
                 </div>
               )}
@@ -208,8 +208,8 @@ export default function ChatInterface() {
               )}
               {streaming && !streamingText && !toolCalling && (
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                    <Loader2 size={14} className="animate-spin text-gray-300" />
+                  <div className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center">
+                    <Loader2 size={14} className="animate-spin text-gray-400" />
                   </div>
                 </div>
               )}
@@ -217,8 +217,8 @@ export default function ChatInterface() {
             </div>
 
             {/* Input */}
-            <div className="px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+68px)] lg:pb-4 border-t border-gray-800">
-              <div className="flex gap-3 items-end bg-gray-800 rounded-xl px-4 py-3">
+            <div className="px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+68px)] lg:pb-4 border-t border-gray-200/60 bg-white/60 backdrop-blur-xl">
+              <div className="flex gap-3 items-end bg-white/80 backdrop-blur border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -226,13 +226,13 @@ export default function ChatInterface() {
                   onKeyDown={handleKeyDown}
                   placeholder="Message Max…"
                   rows={1}
-                  className="flex-1 bg-transparent text-gray-100 placeholder-gray-500 resize-none outline-none max-h-40"
+                  className="flex-1 bg-transparent text-gray-900 placeholder-gray-400 resize-none outline-none max-h-40"
                   style={{ minHeight: '1.5rem', fontSize: '16px' }}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || streaming}
-                  className="w-8 h-8 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg flex items-center justify-center transition-colors shrink-0"
+                  className="w-8 h-8 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-lg flex items-center justify-center transition-colors shrink-0"
                 >
                   {streaming ? (
                     <Loader2 size={14} className="animate-spin" />

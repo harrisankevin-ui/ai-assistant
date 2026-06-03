@@ -15,16 +15,16 @@ interface Props {
 export default function ConversationList({
   conversations,
   activeId,
-  onSelect,
   onDelete,
+  onSelect,
 }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      {/* Mobile toggle button — sits below safe area / status bar */}
+      {/* Mobile toggle button */}
       <button
-        className="lg:hidden fixed left-4 z-40 p-2 bg-[#18181b]/90 backdrop-blur-sm border border-white/[0.08] rounded-xl text-[#9ca3af] active:scale-90 transition-all"
+        className="lg:hidden fixed left-4 z-40 p-2 bg-white/80 backdrop-blur border border-gray-200 rounded-xl text-gray-500 active:scale-90 transition-all shadow-sm"
         style={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}
         onClick={() => setOpen(true)}
         aria-label="Open conversations"
@@ -35,7 +35,7 @@ export default function ConversationList({
       {/* Backdrop */}
       {open && (
         <div
-          className="lg:hidden fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 z-30 bg-black/20 backdrop-blur-sm"
           onClick={() => setOpen(false)}
         />
       )}
@@ -43,17 +43,17 @@ export default function ConversationList({
       {/* Drawer panel */}
       <div className={`
         fixed lg:relative inset-y-0 left-0 z-40
-        w-64 bg-[#111113] border-r border-white/[0.08] flex flex-col h-full shrink-0
+        w-64 bg-white/80 backdrop-blur-xl border-r border-gray-200/60 flex flex-col h-full shrink-0
         transition-transform duration-200
         ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         {/* Drawer header */}
-        <div className="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between">
-          <span className="text-[13px] font-semibold text-[#9ca3af] uppercase tracking-wider">Conversations</span>
+        <div className="px-4 py-3 border-b border-gray-200/60 flex items-center justify-between">
+          <span className="text-[13px] font-semibold text-gray-500 uppercase tracking-wider">Conversations</span>
           <button
-            className="lg:hidden p-1.5 text-[#6b7280] hover:text-white transition-colors rounded-lg hover:bg-white/[0.05]"
+            className="lg:hidden p-1.5 text-gray-400 hover:text-gray-700 transition-colors rounded-lg hover:bg-gray-100"
             onClick={() => setOpen(false)}
           >
             <ChevronLeft size={16} />
@@ -63,15 +63,15 @@ export default function ConversationList({
         {/* List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {conversations.length === 0 && (
-            <p className="text-[12px] text-[#6b7280] px-3 py-4">No conversations yet</p>
+            <p className="text-[12px] text-gray-400 px-3 py-4">No conversations yet</p>
           )}
           {conversations.map((conv) => (
             <div
               key={conv.id}
               className={`group flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
                 activeId === conv.id
-                  ? 'bg-white/[0.08] text-white'
-                  : 'text-[#9ca3af] hover:text-white hover:bg-white/[0.04]'
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-500 hover:bg-white/60 hover:text-gray-800'
               }`}
               onClick={() => { onSelect(conv.id); setOpen(false); }}
             >

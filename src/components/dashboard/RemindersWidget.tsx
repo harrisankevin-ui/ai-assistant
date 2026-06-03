@@ -40,22 +40,21 @@ export default function RemindersWidget() {
   }, []);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.06)] rounded-2xl p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Bell className="w-4 h-4 text-gray-400" />
+        <Bell className="w-3.5 h-3.5 text-gray-400" />
         <h4 className="text-sm font-semibold text-gray-800">Reminders</h4>
       </div>
-
       {loading ? (
-        <div className="h-6 bg-gray-100 rounded animate-pulse w-2/3" />
+        <div className="h-5 bg-gray-100 rounded animate-pulse w-2/3" />
       ) : reminders.length === 0 ? (
         <p className="text-sm text-gray-400">No active reminders</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-1.5">
           {reminders.slice(0, 4).map((r) => (
             <li key={r.id} className="flex items-start justify-between gap-2">
               <span className="text-sm text-gray-700 truncate">{r.text}</span>
-              <span className="text-xs text-gray-400 shrink-0 whitespace-nowrap">
+              <span className="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">
                 {relativeTime(r.due_at)}
               </span>
             </li>

@@ -157,7 +157,7 @@ export default function WeeklyBrief() {
 
   // ── Shared quick-add form (rendered inside a day card) ──────────────────────
   const QuickAddForm = ({ day }: { day: Date }) => (
-    <div className="p-3 bg-[#27272a] rounded-xl border border-white/[0.08] mb-2">
+    <div className="p-3 bg-white/90 backdrop-blur rounded-xl border border-gray-200 mb-2 shadow-sm">
       <input
         ref={quickInputRef}
         value={quickTitle}
@@ -167,13 +167,13 @@ export default function WeeklyBrief() {
           if (e.key === 'Escape') cancelQuickAdd();
         }}
         placeholder="Event name…"
-        className="w-full bg-transparent text-[13px] text-white placeholder-[#6b7280] outline-none mb-2"
+        className="w-full bg-transparent text-[13px] text-gray-900 placeholder-gray-400 outline-none mb-2"
       />
       <div className="flex gap-1.5 mb-2">
         <select
           value={quickProjectId}
           onChange={e => setQuickProjectId(e.target.value)}
-          className="flex-1 min-w-0 bg-[#18181b] text-[12px] text-[#9ca3af] rounded-lg px-2 py-1.5 outline-none border border-white/[0.05]"
+          className="flex-1 min-w-0 bg-gray-50 text-[12px] text-gray-600 rounded-lg px-2 py-1.5 outline-none border border-gray-200"
         >
           <option value="">No project</option>
           {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -181,7 +181,7 @@ export default function WeeklyBrief() {
         <select
           value={quickPriority}
           onChange={e => setQuickPriority(e.target.value as 'low' | 'moderate' | 'high')}
-          className="bg-[#18181b] text-[12px] text-[#9ca3af] rounded-lg px-2 py-1.5 outline-none border border-white/[0.05]"
+          className="bg-gray-50 text-[12px] text-gray-600 rounded-lg px-2 py-1.5 outline-none border border-gray-200"
         >
           <option value="low">Low</option>
           <option value="moderate">Med</option>
@@ -192,13 +192,13 @@ export default function WeeklyBrief() {
         <button
           onClick={() => submitQuickAdd(day)}
           disabled={!quickTitle.trim() || submitting}
-          className="flex-1 py-1.5 bg-[#4f46e5] hover:bg-[#4338ca] disabled:bg-[#27272a] disabled:text-[#6b7280] text-white rounded-lg text-[12px] font-medium transition-colors"
+          className="flex-1 py-1.5 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-100 disabled:text-gray-400 text-white rounded-lg text-[12px] font-medium transition-colors"
         >
           Add
         </button>
         <button
           onClick={cancelQuickAdd}
-          className="px-3 py-1.5 bg-[#27272a] hover:bg-white/[0.08] text-[#9ca3af] rounded-lg text-[12px] transition-colors"
+          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-lg text-[12px] transition-colors"
         >
           <X size={12} />
         </button>
@@ -209,32 +209,32 @@ export default function WeeklyBrief() {
   return (
     <>
       {/* ── DESKTOP: 7-column calendar grid ──────────────────────────────── */}
-      <div className="hidden lg:flex flex-col h-full bg-[#0a0a0f] overflow-hidden">
+      <div className="hidden lg:flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
         {/* Header */}
-        <div className="px-8 py-5 border-b border-white/[0.08] flex items-center justify-between bg-[#0a0a0f]/80 backdrop-blur-xl sticky top-0 z-10">
+        <div className="px-8 py-5 border-b border-gray-200/60 flex items-center justify-between bg-white/60 backdrop-blur-xl sticky top-0 z-10">
           <div className="flex items-center gap-5">
-            <h2 className="text-[20px] font-semibold tracking-tight text-white flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5 text-[#4f46e5]" />
+            <h2 className="text-[20px] font-semibold tracking-tight text-gray-900 flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5 text-gray-600" />
               {label}
             </h2>
-            <div className="flex items-center gap-1 bg-[#18181b] p-1 rounded-xl border border-white/[0.05]">
+            <div className="flex items-center gap-1 bg-white/80 p-1 rounded-xl border border-gray-200">
               <button
                 onClick={() => setWeekOffset(o => o - 1)}
-                className="p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors text-[#9ca3af] hover:text-white"
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-900"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               {weekOffset !== 0 && (
                 <button
                   onClick={() => setWeekOffset(0)}
-                  className="px-3 py-1 text-[13px] font-medium text-white"
+                  className="px-3 py-1 text-[13px] font-medium text-gray-900"
                 >
                   Today
                 </button>
               )}
               <button
                 onClick={() => setWeekOffset(o => o + 1)}
-                className="p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors text-[#9ca3af] hover:text-white"
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-900"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -258,30 +258,28 @@ export default function WeeklyBrief() {
                 <div
                   key={i}
                   ref={isToday ? todayRef : undefined}
-                  className={`flex flex-col rounded-2xl border overflow-hidden backdrop-blur-md transition-all hover:bg-[#18181b]/80 ${
+                  className={`flex flex-col rounded-2xl border overflow-hidden backdrop-blur-xl transition-all ${
                     isToday
-                      ? 'border-[#4f46e5]/50 bg-[#18181b]/50 shadow-[0_0_30px_rgba(79,70,229,0.05)]'
-                      : 'border-white/[0.05] bg-[#18181b]/30'
+                      ? 'border-gray-300 bg-white/90 shadow-[0_4px_20px_rgba(0,0,0,0.08)]'
+                      : 'border-gray-200/60 bg-white/60 hover:bg-white/80'
                   }`}
                 >
                   {/* Day header */}
                   <div className={`px-4 py-4 flex flex-col items-center border-b ${
-                    isToday ? 'border-[#4f46e5]/20 bg-[#4f46e5]/10' : 'border-white/[0.05]'
+                    isToday ? 'border-gray-200 bg-gray-50/80' : 'border-gray-100/60'
                   }`}>
                     <div className="flex items-center justify-between w-full mb-1">
-                      <span className={`text-[11px] uppercase tracking-wider font-semibold ${isToday ? 'text-[#818cf8]' : 'text-[#6b7280]'}`}>
+                      <span className={`text-[11px] uppercase tracking-wider font-semibold ${isToday ? 'text-gray-900' : 'text-gray-400'}`}>
                         {DAY_LABELS[i]}
                       </span>
                       <button
                         onClick={() => isAddingHere ? cancelQuickAdd() : openQuickAdd(dayKey)}
-                        className={`p-1 rounded-lg transition-colors ${
-                          isToday ? 'text-[#818cf8] hover:bg-[#4f46e5]/20' : 'text-[#6b7280] hover:text-white hover:bg-white/[0.05]'
-                        }`}
+                        className="p-1 rounded-lg transition-colors text-gray-400 hover:text-gray-700 hover:bg-gray-100"
                       >
                         <Plus size={13} />
                       </button>
                     </div>
-                    <span className={`text-[24px] font-light ${isToday ? 'text-white' : 'text-[#d1d5db]'}`}>
+                    <span className={`text-[24px] font-light ${isToday ? 'text-gray-900 font-semibold' : 'text-gray-600'}`}>
                       {day.getDate()}
                     </span>
                   </div>
@@ -292,18 +290,18 @@ export default function WeeklyBrief() {
                     {dayTasks.map(task => (
                       <div
                         key={task.id}
-                        className="p-3 bg-[#27272a]/50 border border-white/[0.05] rounded-xl hover:bg-[#27272a] transition-all cursor-pointer group relative overflow-hidden"
+                        className="p-3 bg-white/80 border border-gray-100 rounded-xl hover:bg-white transition-all cursor-pointer group relative overflow-hidden shadow-sm"
                       >
                         <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: PRIORITY_COLOR[task.priority] }} />
-                        <div className="flex items-center text-[11px] text-[#9ca3af] mb-1.5 gap-1.5 pl-1">
+                        <div className="flex items-center text-[11px] text-gray-400 mb-1.5 gap-1.5 pl-1">
                           <Clock className="w-3 h-3" />
                           {formatTime(task.due_at!)}
                         </div>
-                        <div className="text-[13px] font-medium text-white leading-snug group-hover:text-[#818cf8] transition-colors pl-1">
+                        <div className="text-[13px] font-medium text-gray-800 leading-snug group-hover:text-gray-900 transition-colors pl-1">
                           {task.title}
                         </div>
                         {projectName(task.project_id) && (
-                          <div className="text-[11px] text-[#6b7280] mt-1.5 uppercase tracking-wide pl-1">
+                          <div className="text-[11px] text-gray-400 mt-1.5 uppercase tracking-wide pl-1">
                             {projectName(task.project_id)}
                           </div>
                         )}
@@ -318,32 +316,30 @@ export default function WeeklyBrief() {
       </div>
 
       {/* ── MOBILE: Date selector + timeline ─────────────────────────────── */}
-      <div className="lg:hidden flex flex-col h-full bg-[#0a0a0f] overflow-hidden relative">
-        {/* Ambient top glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-[#4f46e5]/10 rounded-full blur-[100px] pointer-events-none z-0" />
+      <div className="lg:hidden flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden relative">
         {/* Sticky header */}
-        <div className="px-5 pt-10 pb-4 bg-[#18181b]/80 backdrop-blur-2xl border-b border-white/[0.08] z-20 sticky top-0 relative">
+        <div className="px-5 pt-10 pb-4 bg-white/80 backdrop-blur-2xl border-b border-gray-200/60 z-20 sticky top-0 relative">
           {/* Month label + nav */}
           <div className="flex items-center justify-between mb-5">
-            <h1 className="text-[26px] font-semibold text-white tracking-tight">{label.split(',')[0]}</h1>
+            <h1 className="text-[26px] font-semibold text-gray-900 tracking-tight">{label.split(',')[0]}</h1>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setWeekOffset(o => o - 1)}
-                className="p-2 rounded-xl text-[#9ca3af] hover:text-white hover:bg-white/[0.05] transition-colors active:scale-90"
+                className="p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors active:scale-90"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               {weekOffset !== 0 && (
                 <button
                   onClick={() => setWeekOffset(0)}
-                  className="px-3 py-1.5 text-[13px] font-medium text-[#818cf8] bg-[#4f46e5]/10 rounded-xl"
+                  className="px-3 py-1.5 text-[13px] font-medium text-gray-700 bg-gray-100 rounded-xl"
                 >
                   Today
                 </button>
               )}
               <button
                 onClick={() => setWeekOffset(o => o + 1)}
-                className="p-2 rounded-xl text-[#9ca3af] hover:text-white hover:bg-white/[0.05] transition-colors active:scale-90"
+                className="p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors active:scale-90"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -361,15 +357,15 @@ export default function WeeklyBrief() {
                   onClick={() => setSelectedDayIdx(i)}
                   className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
                 >
-                  <span className={`text-[11px] font-medium ${isSelected ? 'text-white' : isDayToday ? 'text-[#818cf8]' : 'text-[#6b7280]'}`}>
+                  <span className={`text-[11px] font-medium ${isSelected ? 'text-gray-900' : isDayToday ? 'text-gray-700' : 'text-gray-400'}`}>
                     {DAY_SHORT[i]}
                   </span>
                   <div className={`w-9 h-9 flex items-center justify-center rounded-full text-[15px] transition-all ${
                     isSelected
-                      ? 'bg-[#4f46e5] text-white shadow-[0_0_12px_rgba(79,70,229,0.5)] font-semibold'
+                      ? 'bg-gray-900 text-white shadow-sm font-semibold'
                       : isDayToday
-                        ? 'text-[#818cf8] font-semibold'
-                        : 'text-white font-light hover:bg-[#27272a]'
+                        ? 'text-gray-900 font-semibold'
+                        : 'text-gray-600 font-light hover:bg-gray-100'
                   }`}>
                     {day.getDate()}
                   </div>
@@ -385,8 +381,8 @@ export default function WeeklyBrief() {
           {addingDay !== dayDates[selectedDayIdx].toDateString() && (
             <button
               onClick={() => openQuickAdd(dayDates[selectedDayIdx].toDateString())}
-              className="fixed right-5 w-12 h-12 bg-[#4f46e5] text-white rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] active:scale-90 transition-transform flex items-center justify-center z-30"
-            style={{ bottom: 'calc(env(safe-area-inset-bottom) + 68px)' }}
+              className="fixed right-5 w-12 h-12 bg-gray-900 text-white rounded-full shadow-lg active:scale-90 transition-transform flex items-center justify-center z-30"
+              style={{ bottom: 'calc(env(safe-area-inset-bottom) + 68px)' }}
             >
               <Plus className="w-5 h-5" />
             </button>
@@ -404,10 +400,10 @@ export default function WeeklyBrief() {
             <div className="relative">
               {HOURS.map(hour => (
                 <div key={hour} className="flex items-start h-[70px] relative">
-                  <span className="w-14 text-[12px] text-[#6b7280] font-medium shrink-0 -mt-[7px]">
+                  <span className="w-14 text-[12px] text-gray-400 font-medium shrink-0 -mt-[7px]">
                     {hour > 12 ? `${hour - 12} PM` : hour === 12 ? '12 PM' : `${hour} AM`}
                   </span>
-                  <div className="flex-1 border-t border-white/[0.04] mt-0" />
+                  <div className="flex-1 border-t border-gray-200/60 mt-0" />
                 </div>
               ))}
 
@@ -421,20 +417,21 @@ export default function WeeklyBrief() {
                 return (
                   <div
                     key={task.id}
-                    className="absolute left-[56px] right-0 rounded-xl p-3 border border-white/[0.08] backdrop-blur-md active:scale-[0.98] transition-all flex flex-col justify-center overflow-hidden"
+                    className="absolute left-[56px] right-0 rounded-xl p-3 backdrop-blur-md active:scale-[0.98] transition-all flex flex-col justify-center overflow-hidden shadow-sm"
                     style={{
                       top: `${topOffset}px`,
                       height: `${height}px`,
-                      backgroundColor: 'rgba(24, 24, 27, 0.9)',
+                      backgroundColor: 'rgba(255,255,255,0.85)',
+                      border: '1px solid rgba(229,231,235,0.8)',
                       borderLeft: `4px solid ${PRIORITY_COLOR[task.priority] ?? PRIORITY_COLOR.moderate}`,
                     }}
                   >
                     <div className="flex justify-between items-start gap-2">
-                      <span className="text-[13px] font-medium text-white leading-tight line-clamp-1">{task.title}</span>
-                      <span className="text-[10px] text-[#9ca3af] whitespace-nowrap shrink-0">{formatTime(task.due_at!)}</span>
+                      <span className="text-[13px] font-medium text-gray-800 leading-tight line-clamp-1">{task.title}</span>
+                      <span className="text-[10px] text-gray-400 whitespace-nowrap shrink-0">{formatTime(task.due_at!)}</span>
                     </div>
                     {projectName(task.project_id) && (
-                      <span className="text-[11px] text-[#6b7280] mt-0.5 line-clamp-1">{projectName(task.project_id)}</span>
+                      <span className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{projectName(task.project_id)}</span>
                     )}
                   </div>
                 );
@@ -442,7 +439,7 @@ export default function WeeklyBrief() {
 
               {tasksForDay(dayDates[selectedDayIdx]).length === 0 && !addingDay && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <p className="text-[#6b7280] text-[15px] font-medium">No events today</p>
+                  <p className="text-gray-400 text-[15px] font-medium">No events today</p>
                 </div>
               )}
             </div>

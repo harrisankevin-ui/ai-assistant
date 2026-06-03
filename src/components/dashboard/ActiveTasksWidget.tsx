@@ -38,7 +38,6 @@ export default function ActiveTasksWidget() {
     ]);
     const tasksData = tasksRes.ok ? await tasksRes.json() : [];
     const projectsData = projectsRes.ok ? await projectsRes.json() : [];
-
     const active = Array.isArray(tasksData)
       ? tasksData
           .filter((t: Task) => t.status !== 'done')
@@ -46,15 +45,12 @@ export default function ActiveTasksWidget() {
             (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9))
           .slice(0, 5)
       : [];
-
     setTasks(active);
     setProjects(Array.isArray(projectsData) ? projectsData : []);
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+  useEffect(() => { loadTasks(); }, [loadTasks]);
 
   const projectMap = new Map(projects.map((p) => [p.id, p.name]));
 
@@ -66,25 +62,21 @@ export default function ActiveTasksWidget() {
       body: JSON.stringify({ status: 'done' }),
     });
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
-    setCompleting((prev) => {
-      const next = new Set(prev);
-      next.delete(taskId);
-      return next;
-    });
+    setCompleting((prev) => { const n = new Set(prev); n.delete(taskId); return n; });
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-full flex flex-col">
+    <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.06)] rounded-2xl p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-1">
         <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">Tasks</p>
-        <CheckCircle2 className="w-4 h-4 text-gray-400" />
+        <CheckCircle2 className="w-3.5 h-3.5 text-gray-400" />
       </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-5">Active work</h3>
+      <h3 className="text-lg font-bold text-gray-900 mb-4">Active work</h3>
 
       {loading ? (
-        <div className="space-y-3 flex-1">
+        <div className="space-y-2 flex-1">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />
+            <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : tasks.length === 0 ? (
@@ -92,17 +84,16 @@ export default function ActiveTasksWidget() {
           <p className="text-sm text-gray-400">All caught up ✓</p>
         </div>
       ) : (
-        <div className="space-y-2 flex-1">
+        <div className="space-y-1 flex-1">
           {tasks.map((task) => (
             <div
               key={task.id}
-              className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+              className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-gray-50/80 transition-colors group"
             >
               <button
                 onClick={() => markDone(task.id)}
                 disabled={completing.has(task.id)}
                 className="mt-0.5 shrink-0 text-gray-300 hover:text-green-500 transition-colors disabled:opacity-50"
-                title="Mark done"
               >
                 {completing.has(task.id)
                   ? <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -110,14 +101,12 @@ export default function ActiveTasksWidget() {
               </button>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-800 truncate">{task.title}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-[10px] text-gray-400 mt-0.5">
                   {[
                     task.project_id ? projectMap.get(task.project_id) : null,
                     PRIORITY_LABEL[task.priority]?.text,
                     task.status === 'in_progress' ? 'In progress' : 'Todo',
-                  ]
-                    .filter(Boolean)
-                    .join(' / ')}
+                  ].filter(Boolean).join(' / ')}
                 </p>
               </div>
             </div>
@@ -127,7 +116,7 @@ export default function ActiveTasksWidget() {
 
       <Link
         href="/tasks"
-        className="mt-4 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors self-start"
+        className="mt-3 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors self-start"
       >
         View all <ArrowRight className="w-3 h-3" />
       </Link>

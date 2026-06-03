@@ -23,12 +23,10 @@ function getToday() {
 
 function buildHeadline(events: number, tasks: number): string {
   if (events === 0 && tasks === 0) return 'Clear day';
-  if (events > 0 && tasks === 0) {
+  if (events > 0 && tasks === 0)
     return `Clear day, ${events} commitment${events !== 1 ? 's' : ''}`;
-  }
-  if (events === 0 && tasks > 0) {
+  if (events === 0 && tasks > 0)
     return `${tasks} open task${tasks !== 1 ? 's' : ''}`;
-  }
   return `${events} commitment${events !== 1 ? 's' : ''}, ${tasks} task${tasks !== 1 ? 's' : ''}`;
 }
 
@@ -40,21 +38,17 @@ export default function TodayCard() {
   useEffect(() => {
     async function load() {
       const today = getToday();
-
       const [eventsRes, tasksRes, remindersRes] = await Promise.all([
         fetch(`/api/tasks?weekly_brief=true&date_from=${today}&date_to=${today}`),
         fetch(`/api/tasks?weekly_brief=false`),
         fetch(`/api/reminders`),
       ]);
-
       const events = eventsRes.ok ? await eventsRes.json() : [];
       const tasks = tasksRes.ok ? await tasksRes.json() : [];
       const reminders = remindersRes.ok ? await remindersRes.json() : [];
-
       const openTasks = Array.isArray(tasks)
         ? tasks.filter((t: { status: string }) => t.status !== 'done').length
         : 0;
-
       setStats({
         events: Array.isArray(events) ? events.length : 0,
         openTasks,
@@ -68,29 +62,29 @@ export default function TodayCard() {
   const headline = loading ? ' ' : buildHeadline(stats.events, stats.openTasks);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-2">Today</p>
-      <h2 className="text-2xl font-bold text-gray-900 leading-tight mb-4 min-h-[2.5rem]">
+    <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.06)] rounded-2xl p-4">
+      <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-1.5">Today</p>
+      <h2 className="text-xl font-bold text-gray-900 leading-tight mb-3 min-h-[1.75rem]">
         {headline}
       </h2>
 
       <button
         onClick={() => router.push('/weekly')}
-        className="flex items-center gap-1.5 bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors mb-5"
+        className="flex items-center gap-1.5 bg-gray-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors mb-4"
       >
-        <Plus className="w-4 h-4" />
+        <Plus className="w-3.5 h-3.5" />
         Add
       </button>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {[
           { label: 'Events', value: stats.events },
           { label: 'Open tasks', value: stats.openTasks },
           { label: 'Reminders', value: stats.reminders },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-gray-50 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-gray-900">{loading ? '–' : value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+          <div key={label} className="bg-gray-50/80 rounded-xl p-2.5 text-center">
+            <p className="text-xl font-bold text-gray-900">{loading ? '–' : value}</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">{label}</p>
           </div>
         ))}
       </div>

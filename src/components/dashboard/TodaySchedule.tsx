@@ -52,8 +52,7 @@ export default function TodaySchedule() {
       const eventsData = eventsRes.ok ? await eventsRes.json() : [];
       const projectsData = projectsRes.ok ? await projectsRes.json() : [];
       const sorted = Array.isArray(eventsData)
-        ? [...eventsData].sort((a, b) =>
-            (a.due_at ?? '').localeCompare(b.due_at ?? ''))
+        ? [...eventsData].sort((a, b) => (a.due_at ?? '').localeCompare(b.due_at ?? ''))
         : [];
       setEvents(sorted);
       setProjects(Array.isArray(projectsData) ? projectsData : []);
@@ -66,32 +65,32 @@ export default function TodaySchedule() {
   const dayName = getTodayDayName();
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.06)] rounded-2xl p-4">
       <div className="flex items-center justify-between mb-1">
         <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">Weekly schedule</p>
-        <Calendar className="w-4 h-4 text-gray-400" />
+        <Calendar className="w-3.5 h-3.5 text-gray-400" />
       </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-4">{dayName}</h3>
+      <h3 className="text-lg font-bold text-gray-900 mb-3">{dayName}</h3>
 
       {loading ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-10 bg-gray-100 rounded-lg animate-pulse" />
+            <div key={i} className="h-8 bg-gray-100 rounded-lg animate-pulse" />
           ))}
         </div>
       ) : events.length === 0 ? (
-        <p className="text-sm text-gray-400 py-2">Nothing scheduled today</p>
+        <p className="text-sm text-gray-400 py-1">Nothing scheduled today</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {events.map((event) => (
-            <div key={event.id} className="flex items-start gap-3">
-              <span className="text-xs text-gray-400 font-mono w-16 shrink-0 pt-0.5">
+            <div key={event.id} className="flex items-start gap-2.5">
+              <span className="text-[10px] text-gray-400 font-mono w-14 shrink-0 pt-0.5">
                 {event.due_at ? formatTime(event.due_at) : '—'}
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-800 truncate">{event.title}</p>
                 {event.project_id && projectMap.get(event.project_id) && (
-                  <p className="text-xs text-gray-400">{projectMap.get(event.project_id)}</p>
+                  <p className="text-[10px] text-gray-400">{projectMap.get(event.project_id)}</p>
                 )}
               </div>
             </div>

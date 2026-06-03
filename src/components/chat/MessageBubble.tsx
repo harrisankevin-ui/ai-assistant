@@ -16,12 +16,14 @@ export default function MessageBubble({ message }: Props) {
       {/* Avatar */}
       <div
         className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-          isUser ? 'bg-indigo-600' : 'bg-gray-700'
+          isUser
+            ? 'bg-gray-900'
+            : 'bg-white border border-gray-200 shadow-sm'
         }`}
       >
         {isUser
           ? <User size={16} className="text-white" />
-          : <span className="text-sm font-semibold text-white">M</span>
+          : <span className="text-sm font-semibold text-gray-700">M</span>
         }
       </div>
 
@@ -29,8 +31,8 @@ export default function MessageBubble({ message }: Props) {
       <div
         className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
           isUser
-            ? 'bg-indigo-600 text-white rounded-tr-sm'
-            : 'bg-gray-800 text-gray-100 rounded-tl-sm'
+            ? 'bg-gray-900 text-white rounded-tr-sm shadow-sm'
+            : 'bg-white/80 backdrop-blur-xl border border-gray-100 text-gray-800 rounded-tl-sm shadow-sm'
         }`}
       >
         {isUser ? (
